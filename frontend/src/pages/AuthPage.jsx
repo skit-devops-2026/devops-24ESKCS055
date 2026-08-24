@@ -204,7 +204,7 @@ export default function AuthPage() {
             <p className="auth-form-sub">
               {mode === "login"
                 ? "Log in to continue your debates."
-                : "Sign up free — no verification needed."}
+                : "Sign up — no verification needed."}
             </p>
 
             <form onSubmit={handleSubmit} className="auth-form" noValidate>
