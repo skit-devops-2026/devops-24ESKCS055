@@ -4,35 +4,35 @@ import PublicNavbar from "../components/PublicNavbar";
 
 /* ── Debate card data — shows user opinions, not vote tallies ── */
 const FEATURED_DEBATE = {
-  category: "Educational",
-  catColor: "#7A5BA6",
-  catBg: "rgba(122,91,166,0.12)",
-  title: "Should college education be free for everyone?",
+  category: "Politics & Governance",
+  catColor: "#5B6FA6",
+  catBg: "rgba(91,111,166,0.12)",
+  title: "Should reservation policies be based on economic status instead of caste?",
   author: "Aditi Sharma",
-  forOpinion: "Education is a fundamental right. No one should go into debt to learn — free education lifts entire communities, not just individuals.",
-  againstOpinion: "Free doesn't mean without cost. Taxpayers end up bearing the burden, and quality drops when universities aren't incentivised to compete.",
-  forPct: 72,
-  totalVotes: 1840,
+  forOpinion: "Economic backwardness is the real barrier today. A poor upper-caste student suffers as much as a poor lower-caste one. Shifting to income-based reservation would be more just and reduce social division.",
+  againstOpinion: "Caste discrimination is not just about income — it is about centuries of systemic exclusion. Economic criteria alone cannot address the structural disadvantage that caste creates in education and employment.",
+  forPct: 54,
+  totalVotes: 3210,
 };
 
 const SIDE_DEBATES = [
   {
-    category: "Global",
-    catColor: "#4C8C5B",
-    catBg: "rgba(76,140,91,0.12)",
-    title: "Is remote work the future of employment?",
-    forOpinion: "Productivity data proves people work better at home — no commute, no distractions, more autonomy.",
-    againstOpinion: "Collaboration suffers. Innovation needs face-to-face energy that a Zoom call simply cannot replicate.",
-    forPct: 64,
+    category: "Society & Culture",
+    catColor: "#8B6F47",
+    catBg: "rgba(139,111,71,0.12)",
+    title: "Should India conduct a nationwide caste census?",
+    forOpinion: "Accurate data is the foundation of good policy. Without knowing the real population share of each caste group, welfare schemes are designed on assumptions rather than facts.",
+    againstOpinion: "A caste census will deepen caste identities at the very moment we should be moving beyond them. It risks fuelling political exploitation rather than addressing genuine backwardness.",
+    forPct: 61,
   },
   {
-    category: "Political",
+    category: "Politics & Governance",
     catColor: "#5B6FA6",
     catBg: "rgba(91,111,166,0.12)",
-    title: "Should voting age be lowered to 16?",
-    forOpinion: "16-year-olds pay taxes, drive, and are affected by policy. They deserve a say in the decisions that shape their lives.",
-    againstOpinion: "Cognitive development research shows decision-making isn't fully mature at 16. Political choices require life experience.",
-    forPct: 48,
+    title: "Should political parties be allowed to make promises that significantly increase government spending?",
+    forOpinion: "In a democracy, parties must be accountable to voters through promises. Restricting what they can offer limits political freedom and ultimately disenfranchises citizens.",
+    againstOpinion: "Freebies funded by debt burden future generations. An independent fiscal authority should assess whether election promises are economically viable before they are made.",
+    forPct: 43,
   },
 ];
 
@@ -70,8 +70,8 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: "01", title: "Sign up in 30 seconds", desc: "No verification wait. Create your account and you're in." },
-  { num: "02", title: "Browse or post a debate", desc: "Find a topic that matters to you, or start a new debate yourself." },
+  { num: "01", title: "Create your account", desc: "Sign up in under a minute. No lengthy verification, no waiting." },
+  { num: "02", title: "Browse or start a debate", desc: "Find a topic that matters to you, or raise a new one yourself." },
   { num: "03", title: "Write your For or Against", desc: "Give your actual opinion — not just a thumbs up. Make it count." },
 ];
 
@@ -168,7 +168,7 @@ const LandingPage = () => {
 
               <div className="hero-cta-row">
                 <Link to="/auth" className="hero-btn-primary">
-                  Start Debating — It's Free
+                  Join the Conversation
                   <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
                     <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -250,11 +250,11 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* ══════════════ LIVE DEBATES STRIP ══════════════ */}
-        <section className="debates-strip" id="debates">
+        {/* ══════════════ TRENDING TOPICS ══════════════ */}
+        <section className="debates-strip" id="topics">
           <div className="sec-inner">
-            <div className="sec-eyebrow">See it live</div>
-            <h2 className="sec-h2">Real debates,<br />real opinions.</h2>
+            <div className="sec-eyebrow">Trending now</div>
+            <h2 className="sec-h2">Real issues.<br />Real opinions.</h2>
 
             <div className="debates-grid">
               {[FEATURED_DEBATE, ...SIDE_DEBATES].map((d, i) => (
@@ -272,7 +272,7 @@ const LandingPage = () => {
             <div className="how-left">
               <div className="sec-eyebrow">Getting started</div>
               <h2 className="sec-h2">Three steps<br />to your first debate.</h2>
-              <Link to="/auth" className="how-cta">Create Free Account</Link>
+              <Link to="/auth" className="how-cta">Create an Account</Link>
             </div>
             <div className="how-steps">
               {STEPS.map((s, i) => (
