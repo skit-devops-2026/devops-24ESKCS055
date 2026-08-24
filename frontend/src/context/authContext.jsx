@@ -1,41 +1,39 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import api from "../api/axios";
+import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
+// Hardcoded demo user — no backend needed
+const MOCK_USER = {
+  _id: "user_apoorva_01",
+  fullName: "Apoorva",
+  username: "apoorva",
+  email: "apoorva@sayso.com",
+  profilePic: "",
+  followers: [],
+  following: [],
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Start with mock user already logged in — skips auth check entirely
+  const [user, setUser] = useState(MOCK_USER);
+  const [loading, setLoading] = useState(false);
 
-  const checkAuth = async () => {
-    try {
-      const res = await api.get("/auth/check");
-      setUser(res.data);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
+  const login = async ({ username, password }) => {
+    // Hardcoded credentials check — no backend needed
+    if (username === "apoorva" && password === "1234") {
+      setUser(MOCK_USER);
+      return MOCK_USER;
     }
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const login = async (formData) => {
-    const res = await api.post("/auth/login", formData);
-    setUser(res.data);
-    return res.data;
+    throw new Error("Invalid credentials. Use username: apoorva, password: 1234");
   };
 
   const signup = async (formData) => {
-    const res = await api.post("/auth/signup", formData);
-    setUser(res.data);
-    return res.data;
+    // For demo mode, just set the mock user
+    setUser(MOCK_USER);
+    return MOCK_USER;
   };
 
   const logout = async () => {
-    await api.post("/auth/logout");
     setUser(null);
   };
 
