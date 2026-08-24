@@ -19,7 +19,7 @@ const PublicNavbar = () => {
           <div className="pub-nav-links">
             <a href="#features" className="pub-nav-link">Features</a>
             <a href="#how" className="pub-nav-link">How it works</a>
-            <a href="#debates" className="pub-nav-link">Debates</a>
+            <a href="#topics" className="pub-nav-link">Topics</a>
           </div>
 
           {/* CTA — right */}

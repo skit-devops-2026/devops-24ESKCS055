@@ -8,6 +8,7 @@ const MOCK_USER = {
   fullName: "Apoorva",
   username: "apoorva",
   email: "apoorva@sayso.com",
+  bio: "Curious about politics, society, and everything in between. Here to debate, not just agree.",
   profilePic: "",
   followers: [],
   following: [],
