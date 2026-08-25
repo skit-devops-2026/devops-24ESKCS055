@@ -254,7 +254,7 @@ export default function AuthPage() {
                 <label className="field-label">Username</label>
                 <input
                   className={`field-input ${touched.username && errors.username ? "field-input--err" : ""}`}
-                  placeholder="your_username"
+                  placeholder="username"
                   value={form.username}
                   onChange={set("username")}
                   onBlur={touch("username")}

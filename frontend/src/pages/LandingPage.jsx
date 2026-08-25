@@ -144,20 +144,14 @@ const LandingPage = () => {
 
           <div className="hero-inner">
 
-            {/* ── Left ── */}
-            <div className="hero-left">
-
               <div className="hero-live-badge">
                 <span className="hero-live-dot" />
                 Live debates happening now
               </div>
 
               <h1 className="hero-h1">
-                Your opinion.<br />
-                <span className="hero-h1-line2">
-                  <span className="hero-h1-underline">Every issue.</span>
-                </span>
-                <br />One platform.
+                Your opinion on{" "}
+                <span className="hero-h1-underline">every issue.</span>
               </h1>
 
               <p className="hero-sub">
@@ -192,44 +186,8 @@ const LandingPage = () => {
                   <span className="hss-lbl">Categories</span>
                 </div>
               </div>
-            </div>
 
-            {/* ── Right — interactive debate preview ── */}
-            <div className="hero-right">
-
-              {/* Main featured card */}
-              <div className="hero-main-card">
-                <div className="hero-main-label">
-                  <svg viewBox="0 0 12 12" fill="currentColor" width="8" height="8">
-                    <circle cx="6" cy="6" r="6"/>
-                  </svg>
-                  Featured Debate
-                </div>
-                <DebateCard debate={FEATURED_DEBATE} size="full" />
-              </div>
-
-              {/* Two smaller side cards */}
-              <div className="hero-side-cards">
-                {SIDE_DEBATES.map((d, i) => (
-                  <div
-                    key={i}
-                    className="hero-side-card"
-                    style={{ animationDelay: `${0.2 + i * 0.15}s` }}
-                  >
-                    <DebateCard debate={d} size="small" />
-                  </div>
-                ))}
-              </div>
-
-              {/* Floating tag */}
-              <div className="hero-float-tag">
-                <svg viewBox="0 0 20 20" fill="none" width="13" height="13">
-                  <path d="M10 2l2.4 5 5.6.8-4 3.9.9 5.5L10 14.5l-4.9 2.7.9-5.5L2 7.8l5.6-.8L10 2z" fill="var(--color-accent)" stroke="var(--color-accent)" strokeWidth="1"/>
-                </svg>
-                Write your real opinion
-              </div>
-            </div>
-          </div>
+          </div>{/* /hero-inner */}
         </section>
 
         {/* ══════════════ FEATURES ══════════════ */}
@@ -395,13 +353,13 @@ const LandingPage = () => {
         }
 
         .hero-inner {
-          max-width: 1140px;
+          max-width: 760px;
           margin: 0 auto;
-          padding: 60px 40px;
-          display: grid;
-          grid-template-columns: 1fr 1.1fr;
-          gap: 64px;
+          padding: 80px 40px 70px;
+          display: flex;
+          flex-direction: column;
           align-items: center;
+          text-align: center;
           position: relative;
           z-index: 1;
           width: 100%;
@@ -460,7 +418,7 @@ const LandingPage = () => {
           font-size: 16px;
           line-height: 1.8;
           color: var(--color-muted);
-          max-width: 460px;
+          max-width: 580px;
           margin-bottom: 36px;
         }
 
@@ -495,16 +453,24 @@ const LandingPage = () => {
         .hero-stats-strip {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 0;
+          padding: 20px 28px;
+          background: var(--color-surface);
+          border: 1.5px solid var(--color-border);
+          border-radius: 14px;
+          width: fit-content;
+          margin: 0 auto;
         }
         .hss-item {
           display: flex;
           flex-direction: column;
-          padding-right: 24px;
+          align-items: center;
+          padding: 0 28px;
         }
         .hss-num {
           font-family: 'Fraunces', serif;
-          font-size: 28px;
+          font-size: 26px;
           font-weight: 700;
           color: var(--color-primary-dark);
           line-height: 1;
@@ -513,13 +479,13 @@ const LandingPage = () => {
           font-size: 11.5px;
           color: var(--color-muted);
           font-weight: 500;
-          margin-top: 3px;
+          margin-top: 4px;
+          white-space: nowrap;
         }
         .hss-sep {
           width: 1px;
-          height: 38px;
+          height: 36px;
           background: var(--color-border);
-          margin-right: 24px;
         }
 
         /* ── Right side ── */

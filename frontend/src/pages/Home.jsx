@@ -9,7 +9,6 @@ import { mockPosts } from "../data/mockPosts";
 const SORT_OPTIONS = [
   { value: "newest",    label: "Newest"    },
   { value: "mostLiked", label: "Most Liked" },
-  { value: "mostOpinions", label: "Most Active" },
 ];
 
 const Home = () => {
