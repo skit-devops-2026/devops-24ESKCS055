@@ -4,19 +4,29 @@ import { useNavigate } from "react-router-dom";
 const PostCard = ({ post }) => {
   const navigate = useNavigate();
 
+  const authorName = post.author?.fullName || (typeof post.author === "string" ? "User" : "Anonymous");
+  const likesCount = post.likes?.length || 0;
+  const votesForCount = post.votesFor?.length || 0;
+  const votesAgainstCount = post.votesAgainst?.length || 0;
+  const descriptionSnippet = post.description
+    ? post.description.length > 140
+      ? post.description.slice(0, 140) + "..."
+      : post.description
+    : "";
+
   return (
     <>
       <div className="post-card card" onClick={() => navigate(`/post/${post._id}`)}>
         <div className="pc-top">
           <span className="tag">{post.category}</span>
-          <span className="pc-author">by {post.author.fullName}</span>
+          <span className="pc-author">by {authorName}</span>
         </div>
         <h3>{post.title}</h3>
-        <p>{post.description.slice(0, 140)}...</p>
+        <p>{descriptionSnippet}</p>
         <div className="pc-stats">
-          <span>❤ {post.likes.length}</span>
-          <span className="for">For {post.votesFor.length}</span>
-          <span className="against">Against {post.votesAgainst.length}</span>
+          <span>❤ {likesCount}</span>
+          <span className="for">For {votesForCount}</span>
+          <span className="against">Against {votesAgainstCount}</span>
         </div>
       </div>
 

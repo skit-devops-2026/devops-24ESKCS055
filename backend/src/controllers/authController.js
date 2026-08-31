@@ -8,19 +8,48 @@ export const signup = async (req, res) => {
     if (!fullName || !username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    const cleanFullName = fullName.trim();
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (cleanUsername.length < 3) {
+      return res.status(400).json({ message: "Username must be at least 3 characters" });
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-    if (existingUser) {
-      return res.status(400).json({ message: "Username or email already in use" });
+    // Check if email already exists
+    const existingEmail = await User.findOne({
+      email: { $regex: new RegExp(`^${cleanEmail}$`, "i") },
+    });
+    if (existingEmail) {
+      return res.status(400).json({
+        message: `Email "${cleanEmail}" is already registered. Please log in or use a different email.`,
+      });
+    }
+
+    // Check if username already exists
+    const existingUsername = await User.findOne({
+      username: { $regex: new RegExp(`^${cleanUsername}$`, "i") },
+    });
+    if (existingUsername) {
+      return res.status(400).json({
+        message: `Username "@${cleanUsername}" is already taken. Please choose another username.`,
+      });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({ fullName, username, email, password: hashedPassword });
+    const newUser = new User({
+      fullName: cleanFullName,
+      username: cleanUsername,
+      email: cleanEmail,
+      password: hashedPassword,
+    });
     await newUser.save();
 
     generateToken(newUser._id, res);
@@ -34,6 +63,10 @@ export const signup = async (req, res) => {
     });
   } catch (error) {
     console.log("Error in signup controller", error);
+    if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0] || "Username or email";
+      return res.status(400).json({ message: `${duplicateField} is already in use. Please choose another.` });
+    }
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -41,11 +74,24 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   const { username, password } = req.body;
   try {
-    const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!username || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const cleanInput = username.trim().toLowerCase();
+
+    const user = await User.findOne({
+      $or: [
+        { username: cleanInput },
+        { email: cleanInput },
+        { username: username.trim() },
+        { email: username.trim() },
+      ],
+    });
+    if (!user) return res.status(400).json({ message: "Invalid username/email or password" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) return res.status(400).json({ message: "Invalid username/email or password" });
 
     generateToken(user._id, res);
 
@@ -63,7 +109,12 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  res.cookie("jwt", "", { maxAge: 0 });
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 0,
+  });
   res.status(200).json({ message: "Logged out successfully" });
 };
 

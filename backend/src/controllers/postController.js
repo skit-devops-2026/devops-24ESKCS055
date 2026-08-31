@@ -35,6 +35,7 @@ export const createPost = async (req, res) => {
     }
     const newPost = new Post({ title, category, description, author: req.user._id });
     await newPost.save();
+    await newPost.populate("author", "fullName username profilePic");
     res.status(201).json(newPost);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
@@ -60,13 +61,15 @@ export const toggleLike = async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    const alreadyLiked = post.likes.includes(req.user._id);
+    const userIdStr = req.user._id.toString();
+    const alreadyLiked = post.likes.some((id) => id.toString() === userIdStr);
     if (alreadyLiked) {
-      post.likes = post.likes.filter((id) => id.toString() !== req.user._id.toString());
+      post.likes = post.likes.filter((id) => id.toString() !== userIdStr);
     } else {
       post.likes.push(req.user._id);
     }
     await post.save();
+    await post.populate("author", "fullName username profilePic");
     res.status(200).json(post);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
@@ -79,13 +82,21 @@ export const votePost = async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
-    post.votesFor = post.votesFor.filter((id) => id.toString() !== req.user._id.toString());
-    post.votesAgainst = post.votesAgainst.filter((id) => id.toString() !== req.user._id.toString());
+    const userIdStr = req.user._id.toString();
+    const alreadyFor = post.votesFor.some((id) => id.toString() === userIdStr);
+    const alreadyAgainst = post.votesAgainst.some((id) => id.toString() === userIdStr);
 
-    if (stance === "for") post.votesFor.push(req.user._id);
-    if (stance === "against") post.votesAgainst.push(req.user._id);
+    post.votesFor = post.votesFor.filter((id) => id.toString() !== userIdStr);
+    post.votesAgainst = post.votesAgainst.filter((id) => id.toString() !== userIdStr);
+
+    if (stance === "for" && !alreadyFor) {
+      post.votesFor.push(req.user._id);
+    } else if (stance === "against" && !alreadyAgainst) {
+      post.votesAgainst.push(req.user._id);
+    }
 
     await post.save();
+    await post.populate("author", "fullName username profilePic");
     res.status(200).json(post);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
