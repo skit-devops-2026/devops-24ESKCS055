@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";import "./Settings.css";
+
 
 const Settings = () => {
   const { user, logout } = useAuth();
@@ -46,26 +47,7 @@ const Settings = () => {
         </div>
       </div>
 
-      <style>{`
-        .settings { padding: 40px 24px 60px; max-width: 560px; }
-        .settings h2 { margin-bottom: 24px; }
-
-        .settings-section {
-          padding: 24px;
-          margin-bottom: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .settings-section label { font-size: 13px; font-weight: 600; color: var(--color-muted); margin-top: 8px; }
-        .settings-section button { margin-top: 12px; align-self: flex-start; }
-        .settings-muted { color: var(--color-muted); font-size: 14px; }
-
-        .danger-zone { border-color: var(--color-against); }
-        .danger-btn { border-color: var(--color-against); color: var(--color-against); }
-        .danger-btn:hover { background: var(--color-against); color: #fff; }
-      `}</style>
+      
     </>
   );
 };
