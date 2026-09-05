@@ -1,179 +1,214 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { mockPosts } from "../data/mockPosts";
 import { useAuth } from "../context/AuthContext";
-import VoteBar from "../components/VoteBar";
 import AppNavbar from "../components/AppNavbar";
-import api from "../api/axios";
+import "./PostDetail.css";
 
-const PostDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [following, setFollowing] = useState(false);
+import { getSeeded, timeAgo, OpinionCard } from "../utils/postDetailUtils";
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`/posts/${id}`);
-        setPost(res.data);
-      } catch (err) {
-        console.warn("Could not fetch post from backend, searching fallback data", err);
-        const fallback = mockPosts.find((p) => p._id === id);
-        if (fallback) setPost(fallback);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPost();
-  }, [id]);
+export default function PostDetail() {
+  const { id }      = useParams();
+  const navigate    = useNavigate();
+  const { user }    = useAuth();
 
-  if (loading) {
-    return (
-      <div className="page-container" style={{ padding: "60px 24px", textAlign: "center" }}>
-        Loading debate...
-      </div>
-    );
-  }
+  const found = mockPosts.find((p) => p._id === id);
+  const [post, setPost] = useState(found);
+
+  const seeded = getSeeded(id);
+  const [opinions, setOpinions] = useState(seeded);
+
+  const [activeTab, setActiveTab]   = useState("for");
+  const [draftFor, setDraftFor]     = useState("");
+  const [draftAgainst, setDraftAgainst] = useState("");
+  const [liked, setLiked]           = useState(false);
+  const [search, setSearch]         = useState("");
 
   if (!post) {
     return (
-      <div className="page-container" style={{ padding: "60px 24px", textAlign: "center" }}>
-        <h3>Debate not found.</h3>
-        <Link to="/home" className="btn btn-primary" style={{ marginTop: 16, display: "inline-block" }}>
-          Back to Home
-        </Link>
-      </div>
+      <>
+        <AppNavbar search={search} setSearch={setSearch} />
+        <div className="pd-not-found">Post not found. <button onClick={() => navigate("/home")}>Go back</button></div>
+      </>
     );
   }
 
-  const authorId = post.author?._id || post.author;
-  const isOwner = user?._id && authorId && authorId.toString() === user._id.toString();
-  const isLiked = user?._id && post.likes?.some((uId) => (uId?._id || uId).toString() === user._id.toString());
-  const authorName = post.author?.fullName || "Anonymous";
-  const authorUsername = post.author?.username || "";
+  const isOwner = post.author._id === user?._id;
+  const initials = (post.author?.fullName || "?").charAt(0).toUpperCase();
 
-  const handleLike = async () => {
-    try {
-      const res = await api.post(`/posts/${id}/like`);
-      setPost(res.data);
-    } catch (err) {
-      console.warn("API like failed, using local update", err);
-      setPost((prev) => {
-        const liked = prev.likes?.includes(user?._id);
-        return {
-          ...prev,
-          likes: liked ? prev.likes.filter((i) => i !== user?._id) : [...(prev.likes || []), user?._id],
-        };
-      });
-    }
+  const handleLike = () => {
+    setLiked((v) => !v);
+    setPost((prev) => ({
+      ...prev,
+      likes: liked ? prev.likes.slice(0, -1) : [...prev.likes, user._id],
+    }));
   };
 
-  const handleVote = async (stance) => {
-    try {
-      const res = await api.post(`/posts/${id}/vote`, { stance });
-      setPost(res.data);
-    } catch (err) {
-      console.warn("API vote failed, using local update", err);
-      setPost((prev) => ({
-        ...prev,
-        votesFor: stance === "for" ? [...(prev.votesFor || []), user?._id] : prev.votesFor?.filter((i) => i !== user?._id) || [],
-        votesAgainst: stance === "against" ? [...(prev.votesAgainst || []), user?._id] : prev.votesAgainst?.filter((i) => i !== user?._id) || [],
-      }));
-    }
+  const submitOpinion = (side) => {
+    const text = side === "for" ? draftFor.trim() : draftAgainst.trim();
+    if (!text) return;
+    const newOp = {
+      id:     Date.now(),
+      author: user?.fullName || "You",
+      time:   "just now",
+      text,
+    };
+    setOpinions((prev) => ({
+      ...prev,
+      [side]: [newOp, ...prev[side]],
+    }));
+    side === "for" ? setDraftFor("") : setDraftAgainst("");
+    setActiveTab(side);
   };
 
-  const handleFollow = async () => {
-    if (!authorId || isOwner) return;
-    try {
-      const res = await api.post(`/users/${authorId}/follow`);
-      setFollowing(res.data.isFollowing);
-    } catch (err) {
-      console.warn("API follow failed, using local toggle", err);
-      setFollowing(!following);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this debate?")) return;
-    try {
-      await api.delete(`/posts/${id}`);
-    } catch (err) {
-      console.warn("Delete API failed", err);
-    }
-    navigate("/home");
-  };
+  const forCount     = opinions.for.length;
+  const againstCount = opinions.against.length;
 
   return (
     <>
-      <AppNavbar />
-      <div className="post-detail page-container">
-        <Link to="/home" className="pd-back">← Back to Debates</Link>
+      <AppNavbar search={search} setSearch={setSearch} />
 
-        <div className="pd-main card">
-          <div className="pd-meta">
-            <span className="tag">{post.category}</span>
-            <span className="pd-date">{post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</span>
+      <div className="pd-page">
+        <div className="pd-container">
+
+          {/* Back */}
+          <button className="pd-back" onClick={() => navigate("/home")}>
+            ← Back to debates
+          </button>
+
+          {/* Post header */}
+          <div className="pd-header">
+            <span className="pd-category">{post.category}</span>
+            <h1 className="pd-title">{post.title}</h1>
+
+            <div className="pd-meta-row">
+              <div className="pd-author-wrap">
+                <div className="pd-avatar">{initials}</div>
+                <div>
+                  <span className="pd-author-name">{post.author.fullName}</span>
+                  <span className="pd-time">{timeAgo(post.createdAt)}</span>
+                </div>
+              </div>
+
+              <div className="pd-actions">
+                <button
+                  className={`pd-like-btn ${liked ? "pd-like-btn--active" : ""}`}
+                  onClick={handleLike}
+                >
+                  <svg viewBox="0 0 18 18" fill={liked ? "currentColor" : "none"} width="15" height="15" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M9 15.5S2 11 2 6a5 5 0 0 1 7-4.58A5 5 0 0 1 16 6c0 5-7 9.5-7 9.5z"/>
+                  </svg>
+                  {post.likes.length}
+                </button>
+
+                {isOwner && (
+                  <button className="pd-delete-btn" onClick={() => navigate("/home")}>
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          <h1>{post.title}</h1>
-          <div className="pd-author-row">
-            <Link to={`/profile/${authorId}`} className="pd-author-link">
-              by <strong>{authorName}</strong> {authorUsername ? `@${authorUsername}` : ""}
-            </Link>
-            {!isOwner && authorId && (
+          {/* Full description */}
+          <div className="pd-body">
+            <p className="pd-description">{post.description}</p>
+          </div>
+
+          {/* ── Opinion section ── */}
+          <div className="pd-opinions">
+            <div className="pd-opinions-top">
+              <h3 className="pd-opinions-heading">Opinions</h3>
+
+              {/* For/Against percentage based on opinion count */}
+              {(forCount + againstCount) > 0 && (
+                <div className="pd-pct-wrap">
+                  <div className="pd-pct-labels">
+                    <span className="pd-pct-for">
+                      For — {Math.round((forCount / (forCount + againstCount)) * 100)}%
+                    </span>
+                    <span className="pd-pct-against">
+                      Against — {Math.round((againstCount / (forCount + againstCount)) * 100)}%
+                    </span>
+                  </div>
+                  <div className="pd-pct-bar">
+                    <div
+                      className="pd-pct-fill"
+                      style={{ width: `${Math.round((forCount / (forCount + againstCount)) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="pd-pct-note">{forCount + againstCount} opinion{forCount + againstCount !== 1 ? "s" : ""} shared</p>
+                </div>
+              )}
+            </div>
+
+            {/* Tab switcher */}
+            <div className="pd-tabs">
               <button
-                className={`btn btn-sm ${following ? "btn-primary" : "btn-outline"}`}
-                onClick={handleFollow}
+                className={`pd-tab pd-tab--for ${activeTab === "for" ? "pd-tab--active-for" : ""}`}
+                onClick={() => setActiveTab("for")}
               >
-                {following ? "Following" : "+ Follow"}
+                For
+                <span className="pd-tab-count">{forCount}</span>
               </button>
-            )}
+              <button
+                className={`pd-tab pd-tab--against ${activeTab === "against" ? "pd-tab--active-against" : ""}`}
+                onClick={() => setActiveTab("against")}
+              >
+                Against
+                <span className="pd-tab-count">{againstCount}</span>
+              </button>
+            </div>
+
+            {/* Write opinion */}
+            <div className={`pd-compose pd-compose--${activeTab}`}>
+              <textarea
+                className="pd-compose-input"
+                placeholder={
+                  activeTab === "for"
+                    ? "Write your argument in favour of this topic…"
+                    : "Write your argument against this topic…"
+                }
+                value={activeTab === "for" ? draftFor : draftAgainst}
+                onChange={(e) =>
+                  activeTab === "for"
+                    ? setDraftFor(e.target.value)
+                    : setDraftAgainst(e.target.value)
+                }
+                rows={3}
+              />
+              <div className="pd-compose-footer">
+                <span className="pd-compose-hint">
+                  Be respectful. Make your reasoning clear.
+                </span>
+                <button
+                  className={`pd-submit-btn pd-submit-btn--${activeTab}`}
+                  onClick={() => submitOpinion(activeTab)}
+                  disabled={activeTab === "for" ? !draftFor.trim() : !draftAgainst.trim()}
+                >
+                  Post {activeTab === "for" ? "For" : "Against"}
+                </button>
+              </div>
+            </div>
+
+            {/* Opinion list */}
+            <div className="pd-opinion-list">
+              {opinions[activeTab].length === 0 ? (
+                <div className="pd-no-opinions">
+                  No {activeTab === "for" ? "For" : "Against"} opinions yet.
+                  Be the first to share your view.
+                </div>
+              ) : (
+                opinions[activeTab].map((op) => (
+                  <OpinionCard key={op.id} opinion={op} side={activeTab} />
+                ))
+              )}
+            </div>
           </div>
 
-          <p className="pd-description">{post.description}</p>
-
-          <VoteBar
-            votesFor={post.votesFor?.length || 0}
-            votesAgainst={post.votesAgainst?.length || 0}
-            onVote={handleVote}
-          />
-
-          <div className="pd-actions">
-            <button className={`btn ${isLiked ? "btn-primary" : "btn-outline"}`} onClick={handleLike}>
-              ❤ {post.likes?.length || 0} {post.likes?.length === 1 ? "Like" : "Likes"}
-            </button>
-            {isOwner && (
-              <button className="btn btn-ghost pd-delete" onClick={handleDelete}>
-                Delete Debate
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
-      <style>{`
-        .post-detail { padding: 32px 24px 60px; max-width: 760px; }
-        .pd-back { display: inline-block; margin-bottom: 20px; font-size: 14px; font-weight: 600; color: var(--color-primary); }
-        .pd-back:hover { text-decoration: underline; }
-        .pd-main { padding: 32px; }
-        .pd-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .pd-date { font-size: 13px; color: var(--color-muted); }
-        .post-detail h1 { margin: 8px 0 12px; font-size: 28px; line-height: 1.35; }
-        .pd-author-row { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
-        .pd-author-link { font-size: 14px; color: var(--color-muted); }
-        .pd-author-link strong { color: var(--color-primary); }
-        .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
-        .pd-description { line-height: 1.8; color: var(--color-text); font-size: 16px; margin-bottom: 14px; white-space: pre-line; }
-        .pd-actions { display: flex; gap: 12px; margin-top: 24px; align-items: center; }
-        .pd-delete { color: var(--color-against); border-color: var(--color-against); }
-        .pd-delete:hover { background: var(--color-against); color: #fff; }
-      `}</style>
-    </>
+          </>
   );
-};
-
-export default PostDetail;
+}

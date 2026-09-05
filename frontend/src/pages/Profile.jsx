@@ -1,216 +1,127 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { mockPosts } from "../data/mockPosts";
 import { useAuth } from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 import AddPostModal from "../components/AddPostModal";
 import AppNavbar from "../components/AppNavbar";
-import api from "../api/axios";
+import "./Profile.css";
 
 const Profile = () => {
-  const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const profileId = id || user?._id;
-  const isOwnProfile = !id || (user?._id && profileId === user._id.toString());
-
-  const [profileUser, setProfileUser] = useState(isOwnProfile ? user : null);
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts]       = useState(mockPosts);
   const [showModal, setShowModal] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [search, setSearch]     = useState("");
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!profileId) return;
-      try {
-        setLoading(true);
-        const res = await api.get(`/users/${profileId}`);
-        setProfileUser(res.data.user);
-        setPosts(res.data.posts || []);
-        if (user?._id && res.data.user?.followers) {
-          setIsFollowing(
-            res.data.user.followers.some(
-              (fId) => (fId?._id || fId).toString() === user._id.toString()
-            )
-          );
-        }
-      } catch (err) {
-        console.warn("Could not fetch user from backend, using fallback data", err);
-        if (isOwnProfile) {
-          setProfileUser(user || { fullName: "User", username: "user", followers: [], following: [] });
-          setPosts(mockPosts.filter((p) => p.author?.fullName === user?.fullName));
-        } else {
-          const fallbackPost = mockPosts.find((p) => p.author?._id === profileId);
-          if (fallbackPost) {
-            setProfileUser({ ...fallbackPost.author, followers: [], following: [] });
-            setPosts(mockPosts.filter((p) => p.author?._id === profileId));
-          } else {
-            setProfileUser(user);
-            setPosts([]);
-          }
-        }
-      } finally {
-        setLoading(false);
-      }
+  const myPosts = posts.filter((p) => p.author._id === user?._id || p.author.fullName === user?.fullName);
+
+  const handleAddPost = (data) => {
+    const newPost = {
+      _id: Date.now().toString(),
+      ...data,
+      author: { _id: user._id, fullName: user.fullName, username: user.username },
+      likes: [],
+      votesFor: [],
+      votesAgainst: [],
+      createdAt: new Date().toISOString(),
     };
-
-    fetchProfile();
-  }, [profileId, user, isOwnProfile]);
-
-  const handleToggleFollow = async () => {
-    if (!profileId || isOwnProfile) return;
-    try {
-      const res = await api.post(`/users/${profileId}/follow`);
-      setIsFollowing(res.data.isFollowing);
-      if (res.data.targetFollowers) {
-        setProfileUser((prev) => ({ ...prev, followers: res.data.targetFollowers }));
-      }
-    } catch (err) {
-      console.warn("Follow error", err);
-      setIsFollowing(!isFollowing);
-    }
+    setPosts([newPost, ...posts]);
   };
 
-  const handleAddPost = async (formData) => {
-    try {
-      const res = await api.post("/posts", formData);
-      setPosts((prev) => [res.data, ...prev]);
-    } catch (err) {
-      console.warn("Create post API error, using local fallback", err);
-      const newPost = {
-        _id: Date.now().toString(),
-        ...formData,
-        author: { _id: user?._id, fullName: user?.fullName, username: user?.username },
-        likes: [],
-        votesFor: [],
-        votesAgainst: [],
-        createdAt: new Date().toISOString(),
-      };
-      setPosts((prev) => [newPost, ...prev]);
-    }
-  };
-
-  if (loading && !profileUser) {
-    return (
-      <>
-        <AppNavbar />
-        <div className="profile page-container" style={{ textAlign: "center", padding: "60px 0" }}>
-          Loading profile...
-        </div>
-      </>
-    );
-  }
+  const initials = (user?.fullName || "U").charAt(0).toUpperCase();
 
   return (
     <>
-      <AppNavbar onOpenCreate={() => setShowModal(true)} />
-      <div className="profile page-container">
-        <div className="profile-header card">
-          <div className="profile-avatar">
-            {profileUser?.fullName?.charAt(0) || "U"}
-          </div>
+      <AppNavbar search={search} setSearch={setSearch} />
 
-          <div className="profile-info">
-            <h2>{profileUser?.fullName || "User"}</h2>
-            <p className="profile-username">@{profileUser?.username || "username"}</p>
-            {profileUser?.bio && <p className="profile-bio">{profileUser.bio}</p>}
-            <div className="profile-stats">
-              <span><strong>{profileUser?.followers?.length ?? 0}</strong> Followers</span>
-              <span><strong>{profileUser?.following?.length ?? 0}</strong> Following</span>
-              <span><strong>{posts.length}</strong> Debates Posted</span>
+      <div className="pf-page">
+        <div className="pf-container">
+
+          {/* ── Profile card ── */}
+          <div className="pf-card">
+            {/* Avatar */}
+            <div className="pf-avatar-wrap">
+              <div className="pf-avatar">{initials}</div>
             </div>
-          </div>
 
-          {isOwnProfile ? (
-            <button className="btn btn-outline" onClick={() => navigate("/settings")}>
+            {/* Info */}
+            <div className="pf-info">
+              <h2 className="pf-name">{user?.fullName}</h2>
+              <p className="pf-username">@{user?.username}</p>
+
+              {/* Bio */}
+              {user?.bio && (
+                <p className="pf-bio">{user.bio}</p>
+              )}
+
+              {/* Stats row */}
+              <div className="pf-stats">
+                <div className="pf-stat">
+                  <span className="pf-stat-num">{myPosts.length}</span>
+                  <span className="pf-stat-lbl">Debates</span>
+                </div>
+                <div className="pf-stat-divider" />
+                <div className="pf-stat">
+                  <span className="pf-stat-num">128</span>
+                  <span className="pf-stat-lbl">Followers</span>
+                </div>
+                <div className="pf-stat-divider" />
+                <div className="pf-stat">
+                  <span className="pf-stat-num">84</span>
+                  <span className="pf-stat-lbl">Following</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Settings button */}
+            <button className="pf-settings-btn" onClick={() => navigate("/settings")}>
+              <svg viewBox="0 0 20 20" fill="none" width="15" height="15" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="10" cy="10" r="3"/>
+                <path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.2 3.2l1.4 1.4M15.4 15.4l1.4 1.4M3.2 16.8l1.4-1.4M15.4 4.6l1.4-1.4"/>
+              </svg>
               Settings
             </button>
-          ) : (
-            <button
-              className={`btn ${isFollowing ? "btn-outline" : "btn-primary"}`}
-              onClick={handleToggleFollow}
-            >
-              {isFollowing ? "Following" : "+ Follow"}
-            </button>
-          )}
-        </div>
+          </div>
 
-        <div className="profile-section-header">
-          <h3 className="profile-section-title">
-            {isOwnProfile ? "My Debates" : `${profileUser?.fullName || "User"}'s Debates`}
-          </h3>
-          {isOwnProfile && (
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-              + Start Debate
-            </button>
-          )}
-        </div>
+          {/* ── Posts section ── */}
+          <div className="pf-posts-section">
+            <div className="pf-posts-header">
+              <h3 className="pf-posts-title">
+                My Debates
+                {myPosts.length > 0 && (
+                  <span className="pf-posts-count">{myPosts.length}</span>
+                )}
+              </h3>
+              <button className="pf-new-btn" onClick={() => setShowModal(true)}>
+                + New Debate
+              </button>
+            </div>
 
-        {posts.length === 0 && (
-          <p className="no-posts">
-            {isOwnProfile
-              ? "You haven't posted any debates yet."
-              : "No debates posted yet."}
-          </p>
-        )}
-        {posts.map((post) => (
-          <PostCard key={post._id} post={post} />
-        ))}
+            {myPosts.length === 0 ? (
+              <div className="pf-empty">
+                <p>You haven't posted any debates yet.</p>
+                <button className="pf-new-btn" onClick={() => setShowModal(true)}>
+                  Start your first debate
+                </button>
+              </div>
+            ) : (
+              <div className="pf-posts-list">
+                {myPosts.map((post) => (
+                  <PostCard key={post._id} post={post} />
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
 
       {showModal && (
         <AddPostModal onClose={() => setShowModal(false)} onSubmit={handleAddPost} />
       )}
 
-      <style>{`
-        .profile { padding: 32px 24px 60px; max-width: 840px; }
-
-        .profile-header {
-          display: flex;
-          align-items: center;
-          gap: 24px;
-          padding: 28px;
-          margin-bottom: 30px;
-        }
-
-        .profile-avatar {
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
-          background: var(--color-primary);
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 28px;
-          font-weight: 700;
-          flex-shrink: 0;
-        }
-
-        .profile-info { flex: 1; }
-        .profile-username { color: var(--color-muted); font-size: 14px; margin-bottom: 6px; }
-        .profile-bio { font-size: 14px; color: var(--color-text); margin-bottom: 12px; }
-
-        .profile-stats {
-          display: flex;
-          gap: 20px;
-          font-size: 14px;
-          color: var(--color-muted);
-        }
-
-        .profile-section-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 16px;
-        }
-
-        .profile-section-title { font-size: 20px; }
-        .no-posts { color: var(--color-muted); text-align: center; padding: 40px 0; }
-      `}</style>
-    </>
+          </>
   );
 };
 
