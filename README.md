@@ -1,4 +1,4 @@
-# <Project Name>
+# Sayso
 
 > Replace every angle-bracket placeholder below. The hygiene check in CI will
 > fail until you do.
@@ -7,17 +7,16 @@
 
 | Roll No. | Name | GitHub username |
 |---|---|---|
-| <roll> | <name> | <username> |
+| 24ESKCS055| Apoorva Sharma | apoorva13082005 |
 
 ## About
-
-<Two or three sentences on what this application does.>
+SaySo is an interactive, full-stack debate platform designed for structured public discourse and real-time community arguments. Built with a modern end-to-end DevOps pipeline.
 
 ## Tech stack
 
-- Frontend: <e.g. React>
-- Backend: <e.g. Node.js / Express>
-- Database: <e.g. PostgreSQL>
+- Frontend: React
+- Backend:  Node.js
+- Database: MongoDB
 
 ## Running locally
 
@@ -28,7 +27,7 @@ make run
 
 ## Live URL
 
-<Add once M5 is done. Until then, leave as is.>
+Add once M5 is done. Until then, leave as is.
 
 ## Health endpoint
 
