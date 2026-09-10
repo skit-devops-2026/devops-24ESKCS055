@@ -1,4 +1,4 @@
-# Sayso
+# Sayso`n`n[![CI](https://github.com/skit-devops-2026/devops-24ESKCS055/actions/workflows/ci.yml/badge.svg)](https://github.com/skit-devops-2026/devops-24ESKCS055/actions/workflows/ci.yml)
 
 > Replace every angle-bracket placeholder below. The hygiene check in CI will
 > fail until you do.
