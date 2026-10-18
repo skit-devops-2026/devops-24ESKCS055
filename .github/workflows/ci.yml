@@ -77,5 +77,33 @@ jobs:
             ghcr.io/${{ env.REPO_LOWER }}-frontend:latest
 
   # ---------------------------------------------------------------------------
-  # M5 — Deployment. Add a deploy job here.
+  # M6 — Deployment. Deploy frontend to GitHub Pages.
   # ---------------------------------------------------------------------------
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      - run: make install
+      - run: make build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './frontend/dist'
+      - id: deployment
+        uses: actions/deploy-pages@v4
