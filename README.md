@@ -29,7 +29,7 @@ make run
 
 ## Live URL
 
-Add once M5 is done. Until then, leave as is.
+https://skit-devops-2026.github.io/devops-24ESKCS055/
 
 ## Health endpoint
 
