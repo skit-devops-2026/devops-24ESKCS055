@@ -1,0 +1,12 @@
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total 128
+# HELP process_uptime_seconds Process uptime in seconds
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds 12845.2
+# HELP nodejs_heap_size_used_bytes Process heap memory used
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes 48291040
+# HELP nodejs_resident_memory_bytes Resident memory size in bytes
+# TYPE nodejs_resident_memory_bytes gauge
+nodejs_resident_memory_bytes 78213120
