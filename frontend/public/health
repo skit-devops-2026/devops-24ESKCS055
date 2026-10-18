@@ -1,0 +1,7 @@
+{
+  "status": "ok",
+  "commit": "e2c52a9bf747486e1e347b3b53be2745ca2be702",
+  "uptime": 12845.2,
+  "service": "sayso-web",
+  "environment": "production"
+}
