@@ -13,19 +13,19 @@ export default function AuthLeftPanel() {
 
             <div className="auth-left-content">
               <h2 className="auth-left-h2">
-                Where real opinions<br />shape public debate.
+                One debate every week.<br />One stance per topic.
               </h2>
               <p className="auth-left-sub">
-                Join thousands of everyday people debating the issues that matter —
-                local, political, global, and beyond.
+                Read this week's topic, pick your side, and write your response.
+                Previous debates stay open to read any time.
               </p>
 
               <ul className="auth-left-list">
                 {[
-                  "Post your take on any issue",
-                  "Vote For or Against with your reasoning",
-                  "Follow voices you respect",
-                  "10 categories, unlimited debates",
+                  "One new weekly debate for everyone",
+                  "Choose For, Against, or Neutral",
+                  "Your stance is locked once confirmed",
+                  "Browse previous debates anytime",
                 ].map((item, i) => (
                   <li key={i} className="auth-left-li">
                     <span className="auth-left-check">✓</span>

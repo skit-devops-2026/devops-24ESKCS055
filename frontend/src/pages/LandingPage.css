@@ -1,9 +1,13 @@
+html {
+  scroll-behavior: smooth;
+}
+
 /* ── Reset & base ── */
-        .land {
-          min-height: 100dvh;
-          background: var(--color-bg);
-          overflow-x: hidden;
-        }
+.land {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  overflow-x: hidden;
+}
         .sec-inner {
           max-width: 1140px;
           margin: 0 auto;
@@ -391,6 +395,7 @@
 
         /* ══════ FEATURES ══════ */
         .features {
+          scroll-margin-top: 70px;
           padding: 100px 0;
           background: var(--color-surface);
           border-top: 1px solid var(--color-border);
@@ -448,6 +453,7 @@
 
         /* ══════ HOW IT WORKS ══════ */
         .how {
+          scroll-margin-top: 70px;
           padding: 100px 0;
           background: var(--color-surface);
           border-top: 1px solid var(--color-border);

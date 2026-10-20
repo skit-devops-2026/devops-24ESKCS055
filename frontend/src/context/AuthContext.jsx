@@ -1,45 +1,84 @@
-import React, { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { login as mockLogin, signup as mockSignup, updateProfile as mockUpdateProfile } from "../mock/mockData";
 
 const AuthContext = createContext();
 
-// Hardcoded demo user — no backend needed
-const MOCK_USER = {
-  _id: "user_apoorva_01",
-  fullName: "Apoorva",
-  username: "apoorva",
-  email: "apoorva@sayso.com",
-  bio: "Curious about politics, society, and everything in between. Here to debate, not just agree.",
-  profilePic: "",
-  followers: [],
-  following: [],
-};
+const SESSION_KEY = "sayso_session_user";
 
 export const AuthProvider = ({ children }) => {
-  // Start with mock user already logged in — skips auth check entirely
-  const [user, setUser] = useState(MOCK_USER);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
   const [loading, setLoading] = useState(false);
 
-  const login = async ({ username, password }) => {
-    // Hardcoded credentials check — no backend needed
-    if (username === "apoorva" && password === "1234") {
-      setUser(MOCK_USER);
-      return MOCK_USER;
+  useEffect(() => {
+    try {
+      if (user) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    } catch {
+      // ignore
     }
-    throw new Error("Invalid credentials. Use username: apoorva, password: 1234");
+  }, [user]);
+
+  const login = async ({ username, password }) => {
+    setLoading(true);
+    try {
+      const loggedIn = await mockLogin({ username, password });
+      setUser(loggedIn);
+      return loggedIn;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const signup = async (formData) => {
-    // For demo mode, just set the mock user
-    setUser(MOCK_USER);
-    return MOCK_USER;
+  const signup = async ({ fullName, username, email, password }) => {
+    setLoading(true);
+    try {
+      const newUser = await mockSignup({ fullName, username, email, password });
+      setUser(newUser);
+      return newUser;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
     setUser(null);
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+  };
+
+  const updateUserProfile = async ({ fullName, email }) => {
+    if (!user) throw new Error("No active session.");
+    const updated = await mockUpdateProfile({
+      userId: user._id,
+      fullName,
+      email,
+    });
+    setUser((prev) => ({
+      ...prev,
+      fullName: updated.fullName,
+      email: updated.email,
+    }));
+    return updated;
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );

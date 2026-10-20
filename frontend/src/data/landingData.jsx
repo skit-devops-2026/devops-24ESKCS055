@@ -1,5 +1,3 @@
-import React from "react";
-
 /* ── Debate card data — shows user opinions, not vote tallies ── */
 export const FEATURED_DEBATE = {
   category: "Politics & Governance",
@@ -41,8 +39,8 @@ export const FEATURES = [
         <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
       </svg>
     ),
-    title: "Post Your Take",
-    desc: "Write about any issue — local, political, global, or social. Every voice deserves to be heard.",
+    title: "One debate every week",
+    desc: "An admin posts a new topic each week, and everyone sees the same question.",
   },
   {
     icon: (
@@ -52,8 +50,8 @@ export const FEATURES = [
         <circle cx="5" cy="18" r="2" fill="currentColor" />
       </svg>
     ),
-    title: "Share Your Opinion",
-    desc: "Don't just vote — write your For or Against reasoning. Your words shape the debate.",
+    title: "Pick your side",
+    desc: "Choose For, Against, or Neutral on every debate.",
   },
   {
     icon: (
@@ -62,15 +60,15 @@ export const FEATURES = [
         <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
       </svg>
     ),
-    title: "Discover Perspectives",
-    desc: "See how people across backgrounds think about the same issue. Insight, not noise.",
+    title: "One stance per debate",
+    desc: "Your side is locked once you confirm, so every opinion stays honest and clear.",
   },
 ];
 
 export const STEPS = [
-  { num: "01", title: "Create your account", desc: "Sign up in under a minute. No lengthy verification, no waiting." },
-  { num: "02", title: "Browse or start a debate", desc: "Find a topic that matters to you, or raise a new one yourself." },
-  { num: "03", title: "Write your For or Against", desc: "Give your actual opinion — not just a thumbs up. Make it count." },
+  { num: "01", title: "Create an account or log in", desc: "Sign up or log in to participate in the weekly debate." },
+  { num: "02", title: "Choose your stance", desc: "Read this week's debate topic and pick For, Against, or Neutral to lock your side." },
+  { num: "03", title: "Share your response", desc: "Write your response, read what others have said, and browse previous debates anytime." },
 ];
 
 

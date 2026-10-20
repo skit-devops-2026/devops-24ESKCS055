@@ -1,10 +1,8 @@
-import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicNavbar from "../components/PublicNavbar";
 import "./LandingPage.css";
-import DebateCard from "../components/DebateCard";
 
-import { FEATURED_DEBATE, SIDE_DEBATES, FEATURES, STEPS } from "../data/landingData";
+import { FEATURES, STEPS } from "../data/landingData";
 
 const LandingPage = () => {
   return (
@@ -13,7 +11,7 @@ const LandingPage = () => {
         <PublicNavbar />
 
         {/* ══════════════ HERO ══════════════ */}
-        <section className="hero">
+        <section className="hero" id="hero">
 
           {/* Background decoration */}
           <div className="hero-bg-grid" />
@@ -24,19 +22,18 @@ const LandingPage = () => {
 
 
             <h1 className="hero-h1">
-              Your opinion on{" "}
-              <span className="hero-h1-underline">every issue.</span>
+              Take a stance on{" "}
+              <span className="hero-h1-underline">this week's debate.</span>
             </h1>
 
             <p className="hero-sub">
-              SaySo is where real people — not journalists, not politicians —
-              debate the issues that shape our world. Write your For or Against,
-              read others, and see where opinion truly stands.
+              SaySo is where real people debate one question each week. Choose For,
+              Against, or Neutral, write your response, and explore previous debates anytime.
             </p>
 
             <div className="hero-cta-row">
               <Link to="/auth" className="hero-btn-primary">
-                Join the Conversation
+                Join the Debate
                 <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
                   <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -46,13 +43,13 @@ const LandingPage = () => {
             {/* Stats strip */}
             <div className="hero-stats-strip">
               <div className="hss-item">
-                <span className="hss-num">12K+</span>
-                <span className="hss-lbl">Debates</span>
+                <span className="hss-num">1</span>
+                <span className="hss-lbl">Weekly debate</span>
               </div>
               <div className="hss-sep" />
               <div className="hss-item">
-                <span className="hss-num">84K+</span>
-                <span className="hss-lbl">Opinions written</span>
+                <span className="hss-num">3</span>
+                <span className="hss-lbl">Stances</span>
               </div>
               <div className="hss-sep" />
               <div className="hss-item">
@@ -67,7 +64,7 @@ const LandingPage = () => {
         {/* ══════════════ FEATURES ══════════════ */}
         <section className="features" id="features">
           <div className="sec-inner">
-            <h2 className="sec-h2">Built for opinion.<br />Not entertainment.</h2>
+            <h2 className="sec-h2">One topic each week.<br />Honest stances.</h2>
 
             <div className="features-grid">
               {FEATURES.map((f, i) => (
@@ -75,21 +72,6 @@ const LandingPage = () => {
                   <div className="feat-icon">{f.icon}</div>
                   <h3 className="feat-title">{f.title}</h3>
                   <p className="feat-desc">{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ══════════════ TRENDING TOPICS ══════════════ */}
-        <section className="debates-strip" id="topics">
-          <div className="sec-inner">
-            <h2 className="sec-h2">Real issues.<br />Real opinions.</h2>
-
-            <div className="debates-grid">
-              {[FEATURED_DEBATE, ...SIDE_DEBATES].map((d, i) => (
-                <div key={i} className="debate-strip-card">
-                  <DebateCard debate={d} size="full" />
                 </div>
               ))}
             </div>
@@ -126,11 +108,11 @@ const LandingPage = () => {
             </div>
             <div className="cta-content">
               <h2 className="cta-h2">
-                Make your voice<br />
-                <em className="cta-em">actually heard.</em>
+                Share your stance on<br />
+                <em className="cta-em">this week's debate.</em>
               </h2>
               <p className="cta-sub">
-                Join thousands already debating the issues that shape our world.
+                Pick your side, write your response, and explore perspectives across For, Against, and Neutral.
               </p>
               <Link to="/auth" className="cta-btn">Login / Sign Up</Link>
             </div>
@@ -144,7 +126,7 @@ const LandingPage = () => {
               <span style={{ color: "rgba(255,255,255,0.9)" }}>Say</span>
               <span style={{ color: "var(--color-accent)" }}>So</span>
             </div>
-            <p className="footer-copy">© 2024 SaySo · A platform for public opinion</p>
+            <p className="footer-copy">© 2026 SaySo · Weekly debate platform</p>
           </div>
         </footer>
       </div>

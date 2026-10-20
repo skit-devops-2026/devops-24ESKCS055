@@ -72,8 +72,13 @@ export default function AuthForm() {
         else if (!emailValid(form.email)) e.email = "Email must contain @ and a valid domain.";
       }
     }
-    if (touched.username && !form.username.trim())
-      e.username = "Username is required.";
+    if (touched.username) {
+      if (!form.username.trim()) {
+        e.username = "Username is required.";
+      } else if (mode === "signup" && form.username.trim().toLowerCase() === "admin") {
+        e.username = "Username 'admin' is reserved. Please choose a different username.";
+      }
+    }
 
     if (touched.password && form.password) {
       const failing = passwordRules.filter(r => !r.check(form.password));
@@ -101,6 +106,7 @@ export default function AuthForm() {
       form.fullName.trim() &&
       emailValid(form.email) &&
       form.username.trim() &&
+      form.username.trim().toLowerCase() !== "admin" &&
       pwOk &&
       form.confirm === form.password
     );
@@ -113,19 +119,34 @@ export default function AuthForm() {
       ? ["username", "password"]
       : ["fullName", "email", "username", "password", "confirm"];
     setTouched(Object.fromEntries(allFields.map(f => [f, true])));
+
+    if (mode === "signup" && form.username.trim().toLowerCase() === "admin") {
+      setServerError("Username 'admin' is reserved. Please choose a different username.");
+      return;
+    }
+
     if (!canSubmit) return;
 
     setLoading(true);
     setServerError("");
     try {
       if (mode === "login") {
-        await login({ username: form.username, password: form.password });
+        const logged = await login({ username: form.username, password: form.password });
+        if (logged?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
       } else {
-        await signup({ fullName: form.fullName, username: form.username, email: form.email, password: form.password });
+        const created = await signup({ fullName: form.fullName, username: form.username, email: form.email, password: form.password });
+        if (created?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
       }
-      navigate("/home");
     } catch (err) {
-      setServerError(err?.response?.data?.message || err?.message || "Something went wrong.");
+      setServerError(err?.message || "Username or password is incorrect");
     } finally {
       setLoading(false);
     }

@@ -1,12 +1,7 @@
-import React from "react";
-import { CATEGORIES } from "../data/mockPosts";
+import { CATEGORIES } from "../mock/mockData";
 
-const CategorySidebar = ({ selected, setSelected }) => {
-  const toggle = (cat) => {
-    setSelected((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
-    );
-  };
+const CategorySidebar = ({ selectedCategory = "All", setSelectedCategory }) => {
+  const isAll = !selectedCategory || selectedCategory === "All";
 
   return (
     <>
@@ -14,13 +9,22 @@ const CategorySidebar = ({ selected, setSelected }) => {
         <div className="cat-heading">Categories</div>
 
         <ul className="cat-list">
+          {/* "All" option selected by default */}
+          <li
+            className={`cat-item ${isAll ? "cat-item--active" : ""}`}
+            onClick={() => setSelectedCategory("All")}
+          >
+            All
+            {isAll && <span className="cat-tick">✓</span>}
+          </li>
+
           {CATEGORIES.map((cat) => {
-            const active = selected.includes(cat);
+            const active = selectedCategory === cat;
             return (
               <li
                 key={cat}
                 className={`cat-item ${active ? "cat-item--active" : ""}`}
-                onClick={() => toggle(cat)}
+                onClick={() => setSelectedCategory(cat)}
               >
                 {cat}
                 {active && <span className="cat-tick">✓</span>}
@@ -29,9 +33,9 @@ const CategorySidebar = ({ selected, setSelected }) => {
           })}
         </ul>
 
-        {selected.length > 0 && (
-          <button className="cat-clear" onClick={() => setSelected([])}>
-            Clear filters
+        {!isAll && (
+          <button className="cat-clear" onClick={() => setSelectedCategory("All")}>
+            Clear category filter
           </button>
         )}
       </aside>

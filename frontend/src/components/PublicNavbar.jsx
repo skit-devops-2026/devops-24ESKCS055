@@ -1,14 +1,33 @@
-import React from "react";
 import { Link } from "react-router-dom";
 
 const PublicNavbar = () => {
+  const handleScrollTo = (id) => (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const handleScrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
+
   return (
     <>
       <nav className="pub-nav">
         <div className="pub-nav-inner">
 
           {/* Logo — left */}
-          <div className="pub-logo">
+          <div
+            className="pub-logo"
+            onClick={handleScrollToTop}
+            style={{ cursor: "pointer" }}
+            title="Back to top"
+          >
             <span className="pub-logo-s1">S</span>
             <span className="pub-logo-ay">ay</span>
             <span className="pub-logo-s2">S</span>
@@ -17,9 +36,20 @@ const PublicNavbar = () => {
 
           {/* Links — center */}
           <div className="pub-nav-links">
-            <a href="#features" className="pub-nav-link">Features</a>
-            <a href="#how" className="pub-nav-link">How it works</a>
-            <a href="#topics" className="pub-nav-link">Topics</a>
+            <a
+              href="#features"
+              onClick={handleScrollTo("features")}
+              className="pub-nav-link"
+            >
+              Features
+            </a>
+            <a
+              href="#how"
+              onClick={handleScrollTo("how")}
+              className="pub-nav-link"
+            >
+              How it works
+            </a>
           </div>
 
           {/* CTA — right */}

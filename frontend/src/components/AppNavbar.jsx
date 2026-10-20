@@ -1,25 +1,35 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const BellIcon = () => (
-  <svg viewBox="0 0 22 22" fill="none" width="18" height="18"
-    stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 9A6 6 0 0 0 5 9c0 4-2 5-2 5h16s-2-1-2-5"/>
-    <path d="M12.73 19a2 2 0 0 1-3.46 0"/>
-  </svg>
-);
+const AppNavbar = ({ search = "", setSearch }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [localSearch, setLocalSearch] = useState(search);
 
-const AppNavbar = ({ search, setSearch }) => {
-  const { user }   = useAuth();
-  const navigate   = useNavigate();
-  const [notifOpen, setNotifOpen] = useState(false);
+  // Sync internal state when search prop changes (e.g., when Clear Filters is clicked)
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
 
-  const notifications = [
-    { id: 1, text: "Rohan Verma shared a For opinion on your post.", time: "2m ago" },
-    { id: 2, text: "Your debate got 5 new opinions.",                time: "1h ago" },
-    { id: 3, text: "Priya Kapoor started following you.",            time: "3h ago" },
-  ];
+  // Debounce search update to parent state by ~250ms
+  useEffect(() => {
+    if (!setSearch) return;
+    const timer = setTimeout(() => {
+      setSearch(localSearch);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [localSearch, setSearch]);
+
+  const handleClear = () => {
+    setLocalSearch("");
+    if (setSearch) setSearch("");
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   return (
     <>
@@ -27,63 +37,73 @@ const AppNavbar = ({ search, setSearch }) => {
         <div className="an-inner">
 
           {/* Logo — left */}
-          <Link to="/home" className="an-logo">
+          <Link to={user?.role === "admin" ? "/admin" : "/home"} className="an-logo">
             <span className="an-say">Say</span><span className="an-so">So</span>
+            {user?.role === "admin" && (
+              <span className="an-admin-tag">ADMIN</span>
+            )}
           </Link>
 
           {/* Search — center, takes remaining space */}
-          <div className="an-search-wrap">
-            <svg className="an-search-icon" viewBox="0 0 18 18" fill="none" width="14" height="14">
-              <circle cx="7.5" cy="7.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M12 12l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            <input
-              className="an-search"
-              placeholder="Search debates…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          {/* Right group: notification + profile */}
-          <div className="an-right">
-
-            {/* Bell */}
-            <div className="an-notif-wrap">
-              <button
-                className={`an-bell ${notifOpen ? "an-bell--open" : ""}`}
-                onClick={() => setNotifOpen((v) => !v)}
-                aria-label="Notifications"
-              >
-                <BellIcon />
-                <span className="an-badge">{notifications.length}</span>
-              </button>
-
-              {notifOpen && (
-                <>
-                  <div className="an-backdrop" onClick={() => setNotifOpen(false)} />
-                  <div className="an-dropdown">
-                    <div className="an-dropdown-title">Notifications</div>
-                    <ul className="an-notif-list">
-                      {notifications.map((n) => (
-                        <li key={n.id} className="an-notif-item">
-                          <span className="an-notif-dot" />
-                          <div>
-                            <p className="an-notif-text">{n.text}</p>
-                            <span className="an-notif-time">{n.time}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
+          {setSearch ? (
+            <div className="an-search-wrap">
+              <svg className="an-search-icon" viewBox="0 0 18 18" fill="none" width="14" height="14">
+                <circle cx="7.5" cy="7.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M12 12l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <input
+                className="an-search"
+                placeholder="Search debates by title or description…"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+              />
+              {localSearch && (
+                <button
+                  type="button"
+                  className="an-clear-btn"
+                  onClick={handleClear}
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
               )}
             </div>
+          ) : (
+            <div className="an-search-spacer" />
+          )}
 
-            {/* Profile */}
-            <button className="an-profile" onClick={() => navigate(`/profile/${user._id}`)}>
-              <div className="an-avatar">{user?.fullName?.charAt(0) || "U"}</div>
-              <span className="an-username">{user?.username}</span>
+          {/* Right group: settings + profile + logout */}
+          <div className="an-right">
+
+            {/* Settings link for standard user */}
+            {user?.role !== "admin" && (
+              <button
+                type="button"
+                className="an-nav-action-btn"
+                onClick={() => navigate("/settings")}
+                title="Account Settings"
+              >
+                Settings
+              </button>
+            )}
+
+            {/* Profile Display */}
+            <div className="an-profile">
+              <div className="an-avatar">
+                {user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U"}
+              </div>
+              <span className="an-username">{user?.fullName || user?.username}</span>
+            </div>
+
+            {/* Logout available on every logged-in page */}
+            <button
+              type="button"
+              className="an-logout-btn"
+              onClick={handleLogout}
+              title="Log Out"
+            >
+              Logout
             </button>
 
           </div>
@@ -116,7 +136,8 @@ const AppNavbar = ({ search, setSearch }) => {
         /* Logo */
         .an-logo {
           display: flex;
-          align-items: baseline;
+          align-items: center;
+          gap: 6px;
           text-decoration: none;
           flex-shrink: 0;
         }
@@ -134,12 +155,26 @@ const AppNavbar = ({ search, setSearch }) => {
           color: var(--color-accent);
           letter-spacing: -0.3px;
         }
+        .an-admin-tag {
+          font-family: 'Inter', sans-serif;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.8px;
+          padding: 2px 6px;
+          background: var(--color-primary);
+          color: #fff;
+          border-radius: 4px;
+          margin-left: 2px;
+        }
 
         /* Search — grows to fill remaining space */
         .an-search-wrap {
           flex: 1;
           position: relative;
           min-width: 0;
+        }
+        .an-search-spacer {
+          flex: 1;
         }
         .an-search-icon {
           position: absolute;
@@ -151,7 +186,7 @@ const AppNavbar = ({ search, setSearch }) => {
         }
         .an-search {
           width: 100%;
-          padding: 9px 14px 9px 34px;
+          padding: 9px 34px 9px 34px;
           border: 1.5px solid var(--color-border);
           border-radius: 9px;
           font-size: 13.5px;
@@ -166,127 +201,67 @@ const AppNavbar = ({ search, setSearch }) => {
           border-color: var(--color-primary);
           box-shadow: 0 0 0 3px rgba(62,98,89,0.08);
         }
+        .an-clear-btn {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: var(--color-muted);
+          cursor: pointer;
+          font-size: 13px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          line-height: 1;
+        }
+        .an-clear-btn:hover {
+          color: var(--color-text);
+          background: rgba(0, 0, 0, 0.06);
+        }
 
         /* Right group */
         .an-right {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
           flex-shrink: 0;
         }
 
-        /* Bell button */
-        .an-notif-wrap { position: relative; }
-        .an-bell {
-          width: 38px;
-          height: 38px;
-          border-radius: 9px;
+        .an-nav-action-btn {
+          padding: 7px 12px;
+          background: transparent;
           border: 1.5px solid var(--color-border);
-          background: var(--color-surface);
-          color: var(--color-muted);
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--color-text);
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          transition: border-color 0.15s, color 0.15s, background 0.15s;
+          transition: all 0.15s ease;
         }
-        .an-bell:hover, .an-bell--open {
+        .an-nav-action-btn:hover {
           border-color: var(--color-primary);
           color: var(--color-primary);
-          background: var(--color-primary-tint);
-        }
-        .an-badge {
-          position: absolute;
-          top: -4px; right: -4px;
-          width: 15px; height: 15px;
-          background: var(--color-against);
-          color: #fff;
-          font-size: 9px;
-          font-weight: 700;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 1.5px solid var(--color-bg);
         }
 
-        /* Notification dropdown */
-        .an-backdrop {
-          position: fixed;
-          inset: 0;
-          z-index: 98;
-        }
-        .an-dropdown {
-          position: absolute;
-          top: calc(100% + 8px);
-          right: 0;
-          width: 290px;
-          background: var(--color-surface);
-          border: 1.5px solid var(--color-border);
-          border-radius: 12px;
-          box-shadow: 0 8px 28px rgba(43,43,43,0.11);
-          z-index: 99;
-          overflow: hidden;
-        }
-        .an-dropdown-title {
-          padding: 12px 16px;
-          font-size: 12px;
-          font-weight: 700;
-          color: var(--color-primary-dark);
-          border-bottom: 1px solid var(--color-border);
-          letter-spacing: 0.3px;
-          text-transform: uppercase;
-        }
-        .an-notif-list { list-style: none; }
-        .an-notif-item {
-          display: flex;
-          gap: 12px;
-          align-items: flex-start;
-          padding: 11px 16px;
-          border-bottom: 1px solid var(--color-border);
-          cursor: pointer;
-          transition: background 0.12s;
-        }
-        .an-notif-item:last-child { border-bottom: none; }
-        .an-notif-item:hover { background: var(--color-primary-tint); }
-        .an-notif-dot {
-          width: 7px; height: 7px;
-          border-radius: 50%;
-          background: var(--color-primary);
-          flex-shrink: 0;
-          margin-top: 4px;
-        }
-        .an-notif-text {
-          font-size: 13px;
-          color: var(--color-text);
-          line-height: 1.45;
-          margin-bottom: 2px;
-        }
-        .an-notif-time {
-          font-size: 11.5px;
-          color: var(--color-muted);
-        }
-
-        /* Profile button */
+        /* Profile display */
         .an-profile {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 5px 8px;
+          padding: 4px 6px;
           border-radius: 9px;
-          transition: background 0.15s;
+          user-select: none;
         }
-        .an-profile:hover { background: var(--color-primary-tint); }
         .an-avatar {
-          width: 34px; height: 34px;
+          width: 32px; height: 32px;
           border-radius: 50%;
           background: var(--color-primary);
           color: #fff;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
           display: flex;
           align-items: center;
@@ -297,11 +272,32 @@ const AppNavbar = ({ search, setSearch }) => {
           font-size: 13px;
           font-weight: 600;
           color: var(--color-text);
+          white-space: nowrap;
         }
 
-        @media (max-width: 640px) {
-          .an-inner    { padding: 0 14px; gap: 10px; }
+        /* Logout button */
+        .an-logout-btn {
+          padding: 7px 12px;
+          background: transparent;
+          border: 1.5px solid var(--color-border);
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--color-muted);
+          cursor: pointer;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        .an-logout-btn:hover {
+          border-color: var(--color-against);
+          color: var(--color-against);
+          background: rgba(217, 107, 39, 0.05);
+        }
+
+        @media (max-width: 680px) {
+          .an-inner { padding: 0 14px; gap: 8px; }
           .an-username { display: none; }
+          .an-nav-action-btn { display: none; }
         }
       `}</style>
     </>
