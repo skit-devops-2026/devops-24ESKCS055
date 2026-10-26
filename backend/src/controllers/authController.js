@@ -1,10 +1,25 @@
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import generateToken from "../utils/generateToken.js";
 
+/**
+ * Signs a standard JWT with a 7-day expiration.
+ *
+ * @param {object} payload - Identity claims for the token.
+ * @returns {string} Signed JWT string.
+ */
+const signToken = (payload) =>
+  jwt.sign(payload, process.env.JWT_SECRET || "sayso_jwt_secret_dev", { expiresIn: "7d" });
+
+/**
+ * Handles user registration with uniqueness validation and password hashing.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const signup = async (req, res) => {
-  const { fullName, username, email, password } = req.body;
   try {
+    const { fullName, username, email, password } = req.body;
     if (!fullName || !username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -13,111 +28,191 @@ export const signup = async (req, res) => {
     const cleanUsername = username.trim().toLowerCase();
     const cleanEmail = email.trim().toLowerCase();
 
+    if (cleanUsername === "admin") {
+      return res.status(400).json({ message: "Username 'admin' is reserved. Please choose another." });
+    }
+
     if (cleanUsername.length < 3) {
       return res.status(400).json({ message: "Username must be at least 3 characters" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
     }
 
-    // Check if email already exists
-    const existingEmail = await User.findOne({
-      email: { $regex: new RegExp(`^${cleanEmail}$`, "i") },
+    const existingUser = await User.findOne({
+      $or: [{ username: cleanUsername }, { email: cleanEmail }],
     });
-    if (existingEmail) {
-      return res.status(400).json({
-        message: `Email "${cleanEmail}" is already registered. Please log in or use a different email.`,
-      });
-    }
 
-    // Check if username already exists
-    const existingUsername = await User.findOne({
-      username: { $regex: new RegExp(`^${cleanUsername}$`, "i") },
-    });
-    if (existingUsername) {
-      return res.status(400).json({
-        message: `Username "@${cleanUsername}" is already taken. Please choose another username.`,
-      });
+    if (existingUser) {
+      if (existingUser.username === cleanUsername) {
+        return res.status(400).json({ message: "This username is already taken. Please choose another." });
+      }
+      return res.status(400).json({ message: "This email address is already registered." });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const user = await User.create({
       fullName: cleanFullName,
       username: cleanUsername,
       email: cleanEmail,
       password: hashedPassword,
+      role: "user",
     });
-    await newUser.save();
 
-    generateToken(newUser._id, res);
+    const token = signToken({ id: user._id, username: user.username, role: "user" });
+
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(201).json({
-      _id: newUser._id,
-      fullName: newUser.fullName,
-      username: newUser.username,
-      email: newUser.email,
-      profilePic: newUser.profilePic,
+      token,
+      user: {
+        _id: user._id,
+        id: user._id,
+        fullName: user.fullName,
+        username: user.username,
+        email: user.email,
+        role: "user",
+        bio: user.bio || "",
+      },
     });
   } catch (error) {
-    console.log("Error in signup controller", error);
-    if (error.code === 11000) {
-      const duplicateField = Object.keys(error.keyPattern || {})[0] || "Username or email";
-      return res.status(400).json({ message: `${duplicateField} is already in use. Please choose another.` });
-    }
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Server error during registration" });
   }
 };
 
+/**
+ * Authenticates credentials against predefined administrator configuration or user database.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const login = async (req, res) => {
-  const { username, password } = req.body;
   try {
+    const { username, password } = req.body;
     if (!username || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ message: "Username and password are required" });
     }
 
     const cleanInput = username.trim().toLowerCase();
+    const adminUser = (process.env.ADMIN_USERNAME || "admin").toLowerCase();
+    const adminPass = process.env.ADMIN_PASSWORD || "admin@123";
 
+    // Handle administrative credentials
+    if (cleanInput === adminUser && password === adminPass) {
+      const token = signToken({ id: "admin", username: "admin", role: "admin" });
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.json({
+        token,
+        user: {
+          _id: "admin",
+          id: "admin",
+          fullName: "Platform Administrator",
+          username: "admin",
+          email: "admin@sayso.org",
+          role: "admin",
+          bio: "Editorial curator and platform administrator.",
+        },
+      });
+    }
+
+    // Handle standard user accounts
     const user = await User.findOne({
-      $or: [
-        { username: cleanInput },
-        { email: cleanInput },
-        { username: username.trim() },
-        { email: username.trim() },
-      ],
+      $or: [{ username: cleanInput }, { email: cleanInput }],
     });
-    if (!user) return res.status(400).json({ message: "Invalid username/email or password" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid username/email or password" });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Username or password is incorrect" });
+    }
 
-    generateToken(user._id, res);
+    const token = signToken({ id: user._id, username: user.username, role: user.role });
 
-    res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
-      username: user.username,
-      email: user.email,
-      profilePic: user.profilePic,
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        id: user._id,
+        fullName: user.fullName,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        bio: user.bio || "",
+      },
     });
   } catch (error) {
-    console.log("Error in login controller", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Server error during authentication" });
   }
 };
 
+/**
+ * Returns current authenticated session identity.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const checkAuth = async (req, res) => {
+  try {
+    if (req.user.id === "admin") {
+      return res.json({
+        _id: "admin",
+        id: "admin",
+        fullName: "Platform Administrator",
+        username: "admin",
+        email: "admin@sayso.org",
+        role: "admin",
+        bio: "Editorial curator and platform administrator.",
+      });
+    }
+
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({
+      _id: user._id,
+      id: user._id,
+      fullName: user.fullName,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      bio: user.bio || "",
+    });
+  } catch {
+    res.status(500).json({ message: "Server error checking session" });
+  }
+};
+
+/**
+ * Clears authentication token cookie.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const logout = (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
-    sameSite: "strict",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     maxAge: 0,
   });
-  res.status(200).json({ message: "Logged out successfully" });
-};
-
-export const checkAuth = (req, res) => {
-  res.status(200).json(req.user);
+  res.json({ message: "Logged out successfully" });
 };

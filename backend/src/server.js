@@ -1,13 +1,18 @@
 import express from "express";
-import { connectDB } from "./config/db.js";
-import dns from "dns";
-import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import dns from "dns";
+import { existsSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+import { connectDB } from "./config/db.js";
+import { seedDatabase } from "./config/seed.js";
 import authRoutes from "./routes/authRoutes.js";
-import postRoutes from "./routes/postRoutes.js";
+import debateRoutes from "./routes/debateRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
@@ -18,7 +23,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true,
   })
 );
@@ -29,7 +34,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint (required by M6)
+// Health check endpoint (required by DevOps / CI)
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -39,7 +44,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Prometheus metrics endpoint (required by M6)
+// Prometheus metrics endpoint (required by DevOps / monitoring)
 app.get("/metrics", (req, res) => {
   const memoryUsage = process.memoryUsage();
   const uptime = process.uptime();
@@ -60,15 +65,40 @@ app.get("/metrics", (req, res) => {
   );
 });
 
+// Primary API route handlers
 app.use("/api/auth", authRoutes);
-app.use("/api/posts", postRoutes);
+app.use("/api/debates", debateRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/posts", postRoutes);
 
-connectDB();
+// Production frontend static delivery fallback
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const frontendDist = path.resolve(currentDir, "../../frontend/dist");
+const frontendIndex = path.join(frontendDist, "index.html");
+
+if (existsSync(frontendIndex)) {
+  app.use(express.static(frontendDist));
+  app.get("*", (req, res, next) => {
+    if (req.path === "/api" || req.path.startsWith("/api/")) {
+      return next();
+    }
+    res.sendFile(frontendIndex, (err) => {
+      if (err) next(err);
+    });
+  });
+} else {
+  app.get("/", (req, res) => res.send("Sayso API running"));
+}
+
+// Connect to MongoDB and seed default content if unpopulated
+connectDB().then(() => {
+  seedDatabase();
+});
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server started on PORT:${PORT}`);
 });
-// Application entrypoint
+
+export default app;

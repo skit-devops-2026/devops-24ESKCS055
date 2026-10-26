@@ -1,12 +1,11 @@
-import express from "express";
-import { getProfile, updateProfile, deleteAccount, toggleFollow } from "../controllers/userController.js";
-import { protectRoute } from "../middleware/authMiddleware.js";
+import { Router } from "express";
+import { updateProfile, deleteAccount, getProfile } from "../controllers/userController.js";
+import { protect } from "../middleware/auth.js";
 
-const router = express.Router();
+const router = Router();
 
-router.get("/:id", protectRoute, getProfile);
-router.put("/update", protectRoute, updateProfile);
-router.delete("/delete", protectRoute, deleteAccount);
-router.post("/:id/follow", protectRoute, toggleFollow);
+router.put("/profile", protect, updateProfile);
+router.delete("/account", protect, deleteAccount);
+router.get("/:id", getProfile);
 
 export default router;

@@ -1,83 +1,128 @@
 import User from "../models/User.js";
-import Post from "../models/Post.js";
+import Response from "../models/Response.js";
+import Stance from "../models/Stance.js";
 
+/**
+ * Retrieves public profile information and user debate activity.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await User.findById(req.params.id).select("-password").lean();
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const posts = await Post.find({ author: user._id })
-      .populate("author", "fullName username profilePic")
-      .sort({ createdAt: -1 });
-    res.status(200).json({ user, posts });
+    const userResponses = await Response.find({ user: user._id })
+      .populate("debate", "title category status")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      user: {
+        _id: user._id,
+        id: user._id,
+        fullName: user.fullName,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        bio: user.bio || "",
+        createdAt: user.createdAt,
+      },
+      responses: userResponses,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Failed to retrieve user profile" });
   }
 };
 
+/**
+ * Updates editable account profile fields (fullName, email, bio).
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const updateProfile = async (req, res) => {
   try {
-    const { fullName, bio, profilePic } = req.body;
+    const { fullName, email, bio } = req.body;
+    const cleanName = fullName?.trim();
+    const cleanEmail = email?.trim().toLowerCase();
+
+    if (!cleanName) {
+      return res.status(400).json({ message: "Full name cannot be empty" });
+    }
+    if (!cleanEmail) {
+      return res.status(400).json({ message: "Email cannot be empty" });
+    }
+
+    if (req.user.id === "admin") {
+      return res.json({
+        _id: "admin",
+        id: "admin",
+        fullName: cleanName,
+        username: "admin",
+        email: cleanEmail,
+        role: "admin",
+        bio: bio?.trim() || "Editorial curator and platform administrator.",
+      });
+    }
+
     const updated = await User.findByIdAndUpdate(
-      req.user._id,
-      { fullName, bio, profilePic },
+      req.user.id,
+      {
+        fullName: cleanName,
+        email: cleanEmail,
+        ...(bio !== undefined && { bio: bio.trim() }),
+      },
       { new: true }
     ).select("-password");
-    res.status(200).json(updated);
+
+    if (!updated) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      _id: updated._id,
+      id: updated._id,
+      fullName: updated.fullName,
+      username: updated.username,
+      email: updated.email,
+      role: updated.role,
+      bio: updated.bio || "",
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Failed to update profile" });
   }
 };
 
+/**
+ * Permanently removes user account and cascades deletion to associated stances and responses.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const deleteAccount = async (req, res) => {
   try {
-    const userId = req.user._id;
-    await Post.deleteMany({ author: userId });
-    await User.updateMany({ followers: userId }, { $pull: { followers: userId } });
-    await User.updateMany({ following: userId }, { $pull: { following: userId } });
-    await User.findByIdAndDelete(userId);
+    const userId = req.user.id;
+    if (userId === "admin") {
+      return res.status(400).json({ message: "Administrator account cannot be deleted" });
+    }
+
+    await Promise.all([
+      Response.deleteMany({ user: userId }),
+      Stance.deleteMany({ user: userId }),
+      User.findByIdAndDelete(userId),
+    ]);
 
     res.cookie("jwt", "", {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       maxAge: 0,
     });
-    res.status(200).json({ message: "Account deleted" });
+
+    res.json({ message: "Account and associated activity successfully deleted" });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const toggleFollow = async (req, res) => {
-  try {
-    if (req.params.id === req.user._id.toString()) {
-      return res.status(400).json({ message: "You cannot follow yourself" });
-    }
-
-    const targetUser = await User.findById(req.params.id);
-    const currentUser = await User.findById(req.user._id);
-    if (!targetUser) return res.status(404).json({ message: "User not found" });
-
-    const targetIdStr = targetUser._id.toString();
-    const currentIdStr = currentUser._id.toString();
-
-    const isFollowing = currentUser.following.some((id) => id.toString() === targetIdStr);
-    if (isFollowing) {
-      currentUser.following = currentUser.following.filter((id) => id.toString() !== targetIdStr);
-      targetUser.followers = targetUser.followers.filter((id) => id.toString() !== currentIdStr);
-    } else {
-      currentUser.following.push(targetUser._id);
-      targetUser.followers.push(currentUser._id);
-    }
-    await currentUser.save();
-    await targetUser.save();
-    res.status(200).json({
-      following: currentUser.following,
-      targetFollowers: targetUser.followers,
-      isFollowing: !isFollowing,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Failed to delete account" });
   }
 };

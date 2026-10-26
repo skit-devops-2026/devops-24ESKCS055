@@ -1,15 +1,18 @@
 import mongoose from "mongoose";
 
+/**
+ * Mongoose schema representing an application user or administrator.
+ * Distinguishes administrative privileges and stores civic profile metadata.
+ */
 const userSchema = new mongoose.Schema(
   {
     fullName: { type: String, required: true, trim: true },
     username: { type: String, required: true, unique: true, trim: true, lowercase: true },
     email: { type: String, required: true, unique: true, trim: true, lowercase: true },
     password: { type: String, required: true },
-    profilePic: { type: String, default: "" },
+    role: { type: String, enum: ["user", "admin"], default: "user" },
     bio: { type: String, default: "" },
-    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    profilePic: { type: String, default: "" },
   },
   { timestamps: true }
 );
