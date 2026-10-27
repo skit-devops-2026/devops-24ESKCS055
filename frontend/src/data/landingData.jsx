@@ -39,8 +39,8 @@ export const FEATURES = [
         <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
       </svg>
     ),
-    title: "One debate every week",
-    desc: "An admin posts a new topic each week, and everyone sees the same question.",
+    title: "Fresh debate topics",
+    desc: "An admin posts a new topic, and everyone sees the same shared question.",
   },
   {
     icon: (
@@ -66,8 +66,8 @@ export const FEATURES = [
 ];
 
 export const STEPS = [
-  { num: "01", title: "Create an account or log in", desc: "Sign up or log in to participate in the weekly debate." },
-  { num: "02", title: "Choose your stance", desc: "Read this week's debate topic and pick For, Against, or Neutral to lock your side." },
+  { num: "01", title: "Create an account or log in", desc: "Sign up or log in to participate in active debates." },
+  { num: "02", title: "Choose your stance", desc: "Read the debate topic and pick For, Against, or Neutral to lock your side." },
   { num: "03", title: "Share your response", desc: "Write your response, read what others have said, and browse previous debates anytime." },
 ];
 

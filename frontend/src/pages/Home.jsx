@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import AppNavbar from "../components/AppNavbar";
-import CategorySidebar from "../components/CategorySidebar";
 import StanceModal from "../components/StanceModal";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -12,8 +11,8 @@ import {
 import "./Home.css";
 
 /**
- * Main User Dashboard displaying current active weekly debate,
- * stance locking prompt, reasoned response submissions, and previous archived debates.
+ * Main User Dashboard displaying current active debate,
+ * stance locking prompt, reasoned response submissions, and previous closed debates.
  * Fully styled according to SaySo's design system.
  *
  * @returns {JSX.Element} The rendered Home dashboard.
@@ -23,10 +22,6 @@ const Home = () => {
 
   const [debates, setDebates] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Search & Category Filters (AND logic)
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
 
   // Stance confirmation modal state
   const [pendingStance, setPendingStance] = useState(null); // { debateId, stance }
@@ -38,13 +33,8 @@ const Home = () => {
   const [isSubmittingResponse, setIsSubmittingResponse] = useState(false);
   const [responseSuccessMsg, setResponseSuccessMsg] = useState("");
 
-  // Stance filter for current debate responses: "all" | "for" | "against" | "neutral"
-  const [currentResponseFilter, setCurrentResponseFilter] = useState("all");
-
-  // Track expanded state of archived debates: { [debateId]: boolean }
+  // Track expanded state of closed debates: { [debateId]: boolean }
   const [expandedDebates, setExpandedDebates] = useState({});
-  // Stance filter for each archived debate: { [debateId]: "all" | "for" | "against" | "neutral" }
-  const [archivedResponseFilters, setArchivedResponseFilters] = useState({});
 
   // Load debates from data service
   const fetchDebates = useCallback(async () => {
@@ -80,55 +70,16 @@ const Home = () => {
     fetchDebates();
   }, [fetchDebates]);
 
-  // Separate current weekly debate and archived debates
+  // Separate current active debate and closed debates
   const currentDebate = useMemo(
     () => debates.find((d) => d.status === "current") || null,
     [debates]
   );
 
-  const archivedDebates = useMemo(
-    () => debates.filter((d) => d.status === "archived"),
+  const closedDebates = useMemo(
+    () => debates.filter((d) => d.status !== "current"),
     [debates]
   );
-
-  // Filter helper: search covers title & description, category matches
-  const matchesFilter = useCallback(
-    (debate) => {
-      if (!debate) return false;
-      const cleanSearch = search.trim().toLowerCase();
-      const titleMatch = debate.title.toLowerCase().includes(cleanSearch);
-      const descMatch = (debate.description || "")
-        .toLowerCase()
-        .includes(cleanSearch);
-      const searchMatch = !cleanSearch || titleMatch || descMatch;
-
-      const categoryMatch =
-        selectedCategory === "All" || debate.category === selectedCategory;
-
-      return searchMatch && categoryMatch;
-    },
-    [search, selectedCategory]
-  );
-
-  const currentMatches = useMemo(
-    () => (currentDebate ? matchesFilter(currentDebate) : false),
-    [currentDebate, matchesFilter]
-  );
-
-  const filteredArchived = useMemo(
-    () => archivedDebates.filter(matchesFilter),
-    [archivedDebates, matchesFilter]
-  );
-
-  // Total matching debates count
-  const totalMatchesCount = (currentMatches ? 1 : 0) + filteredArchived.length;
-
-  const hasActiveFilters = Boolean(search.trim() || selectedCategory !== "All");
-
-  const clearFilters = () => {
-    setSearch("");
-    setSelectedCategory("All");
-  };
 
   // Stance selection trigger
   const handleSelectStance = (stance) => {
@@ -199,7 +150,7 @@ const Home = () => {
     }
   };
 
-  // Toggle expand for archived debate
+  // Toggle expand for closed debate
   const toggleExpand = (id) => {
     setExpandedDebates((prev) => ({
       ...prev,
@@ -220,52 +171,22 @@ const Home = () => {
     }
   };
 
-  // Filter responses by stance
-  const getFilteredResponses = (responses, filter) => {
-    if (!responses) return [];
-    if (filter === "all") return responses;
-    return responses.filter((r) => r.stance === filter);
-  };
-
   return (
     <div className="home">
-      <AppNavbar search={search} setSearch={setSearch} />
+      <AppNavbar />
 
-      <div className="home-body">
-        {/* Left Category Sidebar */}
-        <CategorySidebar
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-        />
-
-        {/* Main Feed */}
-        <main className="home-feed">
+      <div className="home-body" style={{ justifyContent: "center" }}>
+        {/* Main Feed Centered */}
+        <main className="home-feed" style={{ maxWidth: 780, margin: "0 auto", padding: "32px 24px 80px" }}>
           <div className="feed-inner">
-            {/* Feed Header with result count & clear action */}
+            {/* Feed Header */}
             <div className="feed-header">
               <div className="feed-header-left">
-                <h1 className="feed-title">
-                  {selectedCategory === "All"
-                    ? "Weekly Debates"
-                    : selectedCategory}
-                </h1>
+                <h1 className="feed-title">Debates</h1>
                 <span className="feed-count">
-                  {totalMatchesCount} debate
-                  {totalMatchesCount !== 1 ? "s" : ""} found
+                  {debates.length} debate{debates.length !== 1 ? "s" : ""}
                 </span>
               </div>
-
-              {hasActiveFilters && (
-                <div className="feed-header-right">
-                  <button
-                    type="button"
-                    className="cat-clear-inline"
-                    onClick={clearFilters}
-                  >
-                    Clear filters
-                  </button>
-                </div>
-              )}
             </div>
 
             {loading ? (
@@ -278,7 +199,7 @@ const Home = () => {
               >
                 Loading debates…
               </div>
-            ) : totalMatchesCount === 0 ? (
+            ) : debates.length === 0 ? (
               /* Empty result state */
               <div className="empty-state">
                 <svg viewBox="0 0 48 48" fill="none" width="44" height="44">
@@ -296,30 +217,19 @@ const Home = () => {
                     strokeLinecap="round"
                   />
                 </svg>
-                <h4>No matching debates</h4>
-                <p>
-                  No debates match your current search and filter settings. Try
-                  adjusting your query.
-                </p>
-                <button
-                  type="button"
-                  className="cat-clear-inline"
-                  onClick={clearFilters}
-                  style={{ marginTop: 8 }}
-                >
-                  Clear filters
-                </button>
+                <h4>No debates available</h4>
+                <p>There are no debates posted yet. Please check back soon.</p>
               </div>
             ) : (
               <>
-                {/* ═════════ 1. THIS WEEK'S DEBATE (TOP) ═════════ */}
-                {currentMatches && currentDebate && (
+                {/* ═════════ 1. CURRENT ACTIVE DEBATE ═════════ */}
+                {currentDebate && (
                   <section
                     className="current-debate-section"
-                    aria-label="This Week's Debate"
+                    aria-label="Current Active Debate"
                   >
                     <div className="section-eyebrow-row">
-                      <span className="eyebrow-tag">THIS WEEK'S TOPIC</span>
+                      <span className="eyebrow-tag">ACTIVE TOPIC</span>
                       <span className="eyebrow-date">
                         {formatDate(currentDebate.postedAt)}
                       </span>
@@ -485,77 +395,23 @@ const Home = () => {
                         )}
                       </div>
 
-                      {/* Responses grouped/filtered */}
+                      {/* Community Responses */}
                       <div className="debate-responses-section">
                         <div className="responses-header-row">
                           <h4 className="responses-section-title">
                             Community Responses (
                             {currentDebate.responses?.length || 0})
                           </h4>
-
-                          {/* Filter Tabs */}
-                          <div className="response-filter-tabs">
-                            <button
-                              type="button"
-                              className={`rf-tab ${
-                                currentResponseFilter === "all"
-                                  ? "rf-tab--active"
-                                  : ""
-                              }`}
-                              onClick={() => setCurrentResponseFilter("all")}
-                            >
-                              All ({currentDebate.responses?.length || 0})
-                            </button>
-                            <button
-                              type="button"
-                              className={`rf-tab ${
-                                currentResponseFilter === "for"
-                                  ? "rf-tab--active"
-                                  : ""
-                              }`}
-                              onClick={() => setCurrentResponseFilter("for")}
-                            >
-                              For ({currentDebate.counts?.for || 0})
-                            </button>
-                            <button
-                              type="button"
-                              className={`rf-tab ${
-                                currentResponseFilter === "against"
-                                  ? "rf-tab--active"
-                                  : ""
-                              }`}
-                              onClick={() => setCurrentResponseFilter("against")}
-                            >
-                              Against ({currentDebate.counts?.against || 0})
-                            </button>
-                            <button
-                              type="button"
-                              className={`rf-tab ${
-                                currentResponseFilter === "neutral"
-                                  ? "rf-tab--active"
-                                  : ""
-                              }`}
-                              onClick={() => setCurrentResponseFilter("neutral")}
-                            >
-                              Neutral ({currentDebate.counts?.neutral || 0})
-                            </button>
-                          </div>
                         </div>
 
                         {/* Responses list */}
-                        {getFilteredResponses(
-                          currentDebate.responses,
-                          currentResponseFilter
-                        ).length === 0 ? (
+                        {(!currentDebate.responses || currentDebate.responses.length === 0) ? (
                           <div className="no-responses-msg">
-                            No responses in this stance group yet.
+                            No responses posted yet. Be the first to share your perspective!
                           </div>
                         ) : (
                           <div className="responses-list">
-                            {getFilteredResponses(
-                              currentDebate.responses,
-                              currentResponseFilter
-                            ).map((r) => (
+                            {currentDebate.responses.map((r) => (
                               <div
                                 key={r.id || r._id}
                                 className="response-item-card"
@@ -586,38 +442,34 @@ const Home = () => {
                 {/* If there is no current debate at all */}
                 {!currentDebate && (
                   <div className="no-current-banner">
-                    There is currently no active debate for this week. Please
-                    check back soon or explore previous debates below.
+                    There is currently no active debate. Please check back soon or explore closed debates below.
                   </div>
                 )}
 
-                {/* ═════════ 2. PREVIOUS DEBATES (ARCHIVED) ═════════ */}
-                {filteredArchived.length > 0 && (
+                {/* ═════════ 2. CLOSED DEBATES ═════════ */}
+                {closedDebates.length > 0 && (
                   <section
                     className="previous-debates-section"
-                    aria-label="Previous Debates"
+                    aria-label="Closed Debates"
                   >
                     <h3 className="previous-section-title font-serif">
-                      Previous Debates
+                      Closed Debates
                     </h3>
 
                     <div className="archived-debates-list">
-                      {filteredArchived.map((arch) => {
+                      {closedDebates.map((arch) => {
                         const archKey = arch.id || arch._id;
                         const isExpanded = Boolean(expandedDebates[archKey]);
-                        const activeFilter =
-                          archivedResponseFilters[archKey] || "all";
-                        const filteredList = getFilteredResponses(
-                          arch.responses,
-                          activeFilter
-                        );
 
                         return (
                           <article key={archKey} className="archived-debate-card">
                             <div className="arch-top-meta">
-                              <span className="debate-cat-badge">
-                                {arch.category}
-                              </span>
+                              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <span className="debate-cat-badge">
+                                  {arch.category}
+                                </span>
+                                <span className="arch-status-pill">CLOSED</span>
+                              </div>
                               <span className="arch-date">
                                 {formatDate(arch.postedAt)}
                               </span>
@@ -647,7 +499,7 @@ const Home = () => {
                             >
                               {isExpanded
                                 ? "Hide Description & Responses ▲"
-                                : "View Description & Responses ▼"}
+                                : `View Description & Responses (${arch.responses?.length || 0}) ▼`}
                             </button>
 
                             {/* Expanded Read-Only Content */}
@@ -659,93 +511,24 @@ const Home = () => {
 
                                 <div className="arch-read-only-banner">
                                   <span>
-                                    🔒 This debate is archived. Stance taking
+                                    🔒 This debate is closed. Stance taking
                                     and new responses are closed.
                                   </span>
                                 </div>
 
-                                {/* Responses Filter Tabs */}
                                 <div className="responses-header-row">
                                   <h5 className="arch-resp-title">
-                                    All Responses ({arch.responses?.length || 0}
-                                    )
+                                    All Responses ({arch.responses?.length || 0})
                                   </h5>
-
-                                  <div className="response-filter-tabs">
-                                    <button
-                                      type="button"
-                                      className={`rf-tab ${
-                                        activeFilter === "all"
-                                          ? "rf-tab--active"
-                                          : ""
-                                      }`}
-                                      onClick={() =>
-                                        setArchivedResponseFilters((prev) => ({
-                                          ...prev,
-                                          [archKey]: "all",
-                                        }))
-                                      }
-                                    >
-                                      All
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`rf-tab ${
-                                        activeFilter === "for"
-                                          ? "rf-tab--active"
-                                          : ""
-                                      }`}
-                                      onClick={() =>
-                                        setArchivedResponseFilters((prev) => ({
-                                          ...prev,
-                                          [archKey]: "for",
-                                        }))
-                                      }
-                                    >
-                                      For
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`rf-tab ${
-                                        activeFilter === "against"
-                                          ? "rf-tab--active"
-                                          : ""
-                                      }`}
-                                      onClick={() =>
-                                        setArchivedResponseFilters((prev) => ({
-                                          ...prev,
-                                          [archKey]: "against",
-                                        }))
-                                      }
-                                    >
-                                      Against
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`rf-tab ${
-                                        activeFilter === "neutral"
-                                          ? "rf-tab--active"
-                                          : ""
-                                      }`}
-                                      onClick={() =>
-                                        setArchivedResponseFilters((prev) => ({
-                                          ...prev,
-                                          [archKey]: "neutral",
-                                        }))
-                                      }
-                                    >
-                                      Neutral
-                                    </button>
-                                  </div>
                                 </div>
 
-                                {filteredList.length === 0 ? (
+                                {(!arch.responses || arch.responses.length === 0) ? (
                                   <div className="no-responses-msg">
-                                    No responses recorded in this stance group.
+                                    No responses recorded for this debate.
                                   </div>
                                 ) : (
                                   <div className="responses-list">
-                                    {filteredList.map((r) => (
+                                    {arch.responses.map((r) => (
                                       <div
                                         key={r.id || r._id}
                                         className="response-item-card"

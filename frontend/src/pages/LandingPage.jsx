@@ -23,12 +23,12 @@ const LandingPage = () => {
 
             <h1 className="hero-h1">
               Take a stance on{" "}
-              <span className="hero-h1-underline">this week's debate.</span>
+              <span className="hero-h1-underline">the debate.</span>
             </h1>
 
             <p className="hero-sub">
-              SaySo is where real people debate one question each week. Choose For,
-              Against, or Neutral, write your response, and explore previous debates anytime.
+              SaySo is where real people debate meaningful questions. Choose For,
+              Against, or Neutral, write your response, and explore perspectives anytime.
             </p>
 
             <div className="hero-cta-row">
@@ -44,7 +44,7 @@ const LandingPage = () => {
             <div className="hero-stats-strip">
               <div className="hss-item">
                 <span className="hss-num">1</span>
-                <span className="hss-lbl">Weekly debate</span>
+                <span className="hss-lbl">Active topic</span>
               </div>
               <div className="hss-sep" />
               <div className="hss-item">
@@ -64,7 +64,7 @@ const LandingPage = () => {
         {/* ══════════════ FEATURES ══════════════ */}
         <section className="features" id="features">
           <div className="sec-inner">
-            <h2 className="sec-h2">One topic each week.<br />Honest stances.</h2>
+            <h2 className="sec-h2">Meaningful topics.<br />Honest stances.</h2>
 
             <div className="features-grid">
               {FEATURES.map((f, i) => (
@@ -109,7 +109,7 @@ const LandingPage = () => {
             <div className="cta-content">
               <h2 className="cta-h2">
                 Share your stance on<br />
-                <em className="cta-em">this week's debate.</em>
+                <em className="cta-em">the active debate.</em>
               </h2>
               <p className="cta-sub">
                 Pick your side, write your response, and explore perspectives across For, Against, and Neutral.
@@ -126,7 +126,7 @@ const LandingPage = () => {
               <span style={{ color: "rgba(255,255,255,0.9)" }}>Say</span>
               <span style={{ color: "var(--color-accent)" }}>So</span>
             </div>
-            <p className="footer-copy">© 2026 SaySo · Weekly debate platform</p>
+            <p className="footer-copy">© 2026 SaySo · Debate platform</p>
           </div>
         </footer>
       </div>

@@ -72,7 +72,7 @@ export const seedDatabase = async () => {
         description:
           "As generative AI becomes ubiquitous in media and administration, transparency legislation has been proposed to require visible provenance and training watermarks. Advocates argue this safeguards democratic discourse against synthetic disinformation. Detractors claim watermarks can be trivially stripped and heavy compliance slows down open-source innovation.",
         category: "Technology & AI",
-        status: "archived",
+        status: "closed",
         postedAt: new Date(Date.now() - 8 * 24 * 3600 * 1000),
       },
       {
@@ -80,7 +80,7 @@ export const seedDatabase = async () => {
         description:
           "Decades of standardized test usage in university admissions face growing scrutiny regarding demographic parity and predictive validity. Supporters of test-optional models emphasize holistic candidate review, whereas defenders maintain that standardized metrics remain the only objective safeguard against high school grade inflation.",
         category: "Education",
-        status: "archived",
+        status: "closed",
         postedAt: new Date(Date.now() - 15 * 24 * 3600 * 1000),
       },
       {
@@ -88,7 +88,7 @@ export const seedDatabase = async () => {
         description:
           "Economists widely promote carbon taxes and cap-and-trade systems to internalize environmental externalities. Opponents argue that carbon taxation creates regressive cost burdens on low-income households and that direct green infrastructure subsidies yield faster technological transitions.",
         category: "Environment",
-        status: "archived",
+        status: "closed",
         postedAt: new Date(Date.now() - 22 * 24 * 3600 * 1000),
       },
       {
@@ -96,7 +96,7 @@ export const seedDatabase = async () => {
         description:
           "Global distributed teams have sparked intense debate over whether compensation should reflect the employee's local cost of living or solely the market value of their output regardless of geographical location.",
         category: "Economy & Business",
-        status: "archived",
+        status: "closed",
         postedAt: new Date(Date.now() - 29 * 24 * 3600 * 1000),
       },
     ]);

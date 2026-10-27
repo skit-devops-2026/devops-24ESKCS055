@@ -1,14 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import AppNavbar from "../components/AppNavbar";
-import CategorySidebar from "../components/CategorySidebar";
 import { CATEGORIES } from "../mock/mockData";
 import { getDebates, postDebate } from "../mock/mockData";
 import "./Home.css";
 
 /**
- * Admin Dashboard page allowing platform administrators to publish new weekly debates,
- * view all current and archived topics, and inspect community responses.
+ * Admin Dashboard page allowing platform administrators to publish new debate topics,
+ * view all active and closed debates, and inspect community responses.
  *
  * @returns {JSX.Element} The rendered AdminDashboard page.
  */
@@ -17,21 +16,16 @@ const AdminDashboard = () => {
   const [debates, setDebates] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Search & Category Filters (AND logic)
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-
   // Post New Debate Form State
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0] || "");
+  const [category, setCategory] = useState(CATEGORIES[0] || "Society & Culture");
   const [formErrors, setFormErrors] = useState({});
   const [publishSuccessMsg, setPublishSuccessMsg] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // Response filters and expansion state for each debate
+  // Expansion state for each debate
   const [expandedDebates, setExpandedDebates] = useState({});
-  const [responseFilters, setResponseFilters] = useState({}); // { [debateId]: "all" | "for" | "against" | "neutral" }
 
   const fetchDebates = async () => {
     try {
@@ -45,28 +39,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchDebates();
   }, []);
-
-  const filteredDebates = useMemo(() => {
-    const cleanSearch = search.trim().toLowerCase();
-    return debates.filter((debate) => {
-      if (!debate) return false;
-      const titleMatch = debate.title.toLowerCase().includes(cleanSearch);
-      const descMatch = (debate.description || "")
-        .toLowerCase()
-        .includes(cleanSearch);
-      const searchMatch = !cleanSearch || titleMatch || descMatch;
-      const categoryMatch =
-        selectedCategory === "All" || debate.category === selectedCategory;
-      return searchMatch && categoryMatch;
-    });
-  }, [debates, search, selectedCategory]);
-
-  const hasActiveFilters = Boolean(search.trim() || selectedCategory !== "All");
-
-  const clearFilters = () => {
-    setSearch("");
-    setSelectedCategory("All");
-  };
 
   const handlePostDebate = async (e) => {
     e.preventDefault();
@@ -93,9 +65,9 @@ const AdminDashboard = () => {
       });
       setTitle("");
       setDescription("");
-      setCategory(CATEGORIES[0] || "");
+      setCategory(CATEGORIES[0] || "Society & Culture");
       setPublishSuccessMsg(
-        "New weekly debate published successfully! Previous topic has been archived."
+        "New debate published successfully! Previous topic has been closed."
       );
       setTimeout(() => setPublishSuccessMsg(""), 6000);
       await fetchDebates();
@@ -125,47 +97,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const getFilteredResponses = (responses, filter) => {
-    if (!responses) return [];
-    if (!filter || filter === "all") return responses;
-    return responses.filter((r) => r.stance === filter);
-  };
-
   return (
     <div className="home">
-      <AppNavbar search={search} setSearch={setSearch} />
+      <AppNavbar />
 
-      <div className="home-body">
-        {/* Left Category Sidebar */}
-        <CategorySidebar
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-        />
-
-        {/* Main Admin Feed */}
-        <main className="home-feed">
+      <div className="home-body" style={{ justifyContent: "center" }}>
+        {/* Main Admin Feed Centered */}
+        <main className="home-feed" style={{ maxWidth: 780, margin: "0 auto", padding: "32px 24px 80px" }}>
           <div className="feed-inner">
             {/* Header */}
             <div className="feed-header">
               <div className="feed-header-left">
                 <h1 className="feed-title">Admin Management Dashboard</h1>
                 <span className="feed-count">
-                  {filteredDebates.length} debate
-                  {filteredDebates.length !== 1 ? "s" : ""} found
+                  {debates.length} debate{debates.length !== 1 ? "s" : ""}
                 </span>
               </div>
-
-              {hasActiveFilters && (
-                <div className="feed-header-right">
-                  <button
-                    type="button"
-                    className="cat-clear-inline"
-                    onClick={clearFilters}
-                  >
-                    Clear filters
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* ═════════ 1. POST NEW DEBATE FORM ═════════ */}
@@ -175,11 +122,10 @@ const AdminDashboard = () => {
             >
               <div className="admin-form-card">
                 <h2 className="admin-section-heading font-serif">
-                  Post New Weekly Debate
+                  Post New Debate
                 </h2>
                 <p className="admin-section-sub">
-                  Publishing a new topic automatically sets it as the active
-                  "current" debate and archives the previous one.
+                  Publishing a new topic sets it as the active debate and closes the previous one.
                 </p>
 
                 <form
@@ -278,14 +224,14 @@ const AdminDashboard = () => {
                       className="admin-publish-btn"
                       disabled={isPublishing}
                     >
-                      {isPublishing ? "Publishing…" : "Publish Weekly Debate"}
+                      {isPublishing ? "Publishing…" : "Publish Debate"}
                     </button>
                   </div>
                 </form>
               </div>
             </section>
 
-            {/* ═════════ 2. VIEW ALL DEBATES (CURRENT FIRST, THEN ARCHIVED) ═════════ */}
+            {/* ═════════ 2. VIEW ALL DEBATES (ACTIVE FIRST, THEN CLOSED) ═════════ */}
             <section
               className="admin-debates-list-section"
               aria-label="All Platform Debates"
@@ -294,7 +240,7 @@ const AdminDashboard = () => {
                 className="admin-section-heading font-serif"
                 style={{ marginTop: 40, marginBottom: 16 }}
               >
-                All Debates ({filteredDebates.length})
+                All Debates ({debates.length})
               </h2>
 
               {loading ? (
@@ -307,37 +253,23 @@ const AdminDashboard = () => {
                 >
                   Loading debates…
                 </div>
-              ) : filteredDebates.length === 0 ? (
+              ) : debates.length === 0 ? (
                 <div className="empty-state">
-                  <h4>No debates match your filters</h4>
-                  <p>
-                    No debates match '{search}' in {selectedCategory}. Try another
-                    keyword or clear filters.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn-primary-sm"
-                    onClick={clearFilters}
-                  >
-                    Clear filters
-                  </button>
+                  <h4>No debates found</h4>
+                  <p>There are no debates created yet.</p>
                 </div>
               ) : (
                 <div className="archived-debates-list">
-                  {filteredDebates.map((deb) => {
+                  {debates.map((deb) => {
                     const debKey = deb.id || deb._id;
                     const isExpanded = Boolean(expandedDebates[debKey]);
-                    const currentFilter = responseFilters[debKey] || "all";
-                    const filteredResponses = getFilteredResponses(
-                      deb.responses,
-                      currentFilter
-                    );
+                    const isCurrent = deb.status === "current";
 
                     return (
                       <article
                         key={debKey}
                         className={`archived-debate-card ${
-                          deb.status === "current" ? "admin-current-border" : ""
+                          isCurrent ? "admin-current-border" : ""
                         }`}
                       >
                         <div className="arch-top-meta">
@@ -351,12 +283,12 @@ const AdminDashboard = () => {
                             <span className="debate-cat-badge">
                               {deb.category}
                             </span>
-                            {deb.status === "current" ? (
+                            {isCurrent ? (
                               <span className="active-status-badge">
                                 CURRENT TOPIC
                               </span>
                             ) : (
-                              <span className="arch-status-pill">ARCHIVED</span>
+                              <span className="arch-status-pill">CLOSED</span>
                             )}
                           </div>
                           <span className="arch-date">
@@ -404,93 +336,26 @@ const AdminDashboard = () => {
 
                             <div className="admin-readonly-notice">
                               <span>
-                                Admin View: Read-only access to community
-                                responses.
+                                {isCurrent
+                                  ? "Admin View: Read-only access to community responses for this active debate."
+                                  : "Admin View: Read-only access to community responses for this closed debate."}
                               </span>
                             </div>
 
-                            {/* Response Stance Filter Tabs */}
                             <div className="responses-header-row">
                               <h4 className="arch-resp-title">
                                 All Responses ({deb.responses?.length || 0})
                               </h4>
-
-                              <div className="response-filter-tabs">
-                                <button
-                                  type="button"
-                                  className={`rf-tab ${
-                                    currentFilter === "all"
-                                      ? "rf-tab--active"
-                                      : ""
-                                  }`}
-                                  onClick={() =>
-                                    setResponseFilters((prev) => ({
-                                      ...prev,
-                                      [debKey]: "all",
-                                    }))
-                                  }
-                                >
-                                  All ({deb.responses?.length || 0})
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`rf-tab ${
-                                    currentFilter === "for"
-                                      ? "rf-tab--active"
-                                      : ""
-                                  }`}
-                                  onClick={() =>
-                                    setResponseFilters((prev) => ({
-                                      ...prev,
-                                      [debKey]: "for",
-                                    }))
-                                  }
-                                >
-                                  For ({deb.counts?.for || 0})
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`rf-tab ${
-                                    currentFilter === "against"
-                                      ? "rf-tab--active"
-                                      : ""
-                                  }`}
-                                  onClick={() =>
-                                    setResponseFilters((prev) => ({
-                                      ...prev,
-                                      [debKey]: "against",
-                                    }))
-                                  }
-                                >
-                                  Against ({deb.counts?.against || 0})
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`rf-tab ${
-                                    currentFilter === "neutral"
-                                      ? "rf-tab--active"
-                                      : ""
-                                  }`}
-                                  onClick={() =>
-                                    setResponseFilters((prev) => ({
-                                      ...prev,
-                                      [debKey]: "neutral",
-                                    }))
-                                  }
-                                >
-                                  Neutral ({deb.counts?.neutral || 0})
-                                </button>
-                              </div>
                             </div>
 
-                            {/* Responses List */}
-                            {filteredResponses.length === 0 ? (
+                            {/* Responses List without filter tabs */}
+                            {(!deb.responses || deb.responses.length === 0) ? (
                               <div className="no-responses-msg">
-                                No responses recorded in this stance group.
+                                No responses recorded yet for this debate.
                               </div>
                             ) : (
                               <div className="responses-list">
-                                {filteredResponses.map((r) => (
+                                {deb.responses.map((r) => (
                                   <div
                                     key={r.id || r._id}
                                     className="response-item-card"

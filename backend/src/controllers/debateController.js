@@ -145,8 +145,8 @@ export const createDebate = async (req, res) => {
       return res.status(400).json({ message: "Debate description is required" });
     }
 
-    // Archive all current debates
-    await Debate.updateMany({ status: "current" }, { status: "archived" });
+    // Close all currently active debates
+    await Debate.updateMany({ status: "current" }, { status: "closed" });
 
     const newDebate = await Debate.create({
       title: cleanTitle,
