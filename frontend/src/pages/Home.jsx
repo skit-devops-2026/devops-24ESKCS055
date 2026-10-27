@@ -452,9 +452,14 @@ const Home = () => {
                     className="previous-debates-section"
                     aria-label="Closed Debates"
                   >
-                    <h3 className="previous-section-title font-serif">
-                      Closed Debates
-                    </h3>
+                    <div style={{ marginTop: 40, marginBottom: 18 }}>
+                      <h3 className="previous-section-title font-serif" style={{ fontSize: 22, margin: 0 }}>
+                        Past Debates ({closedDebates.length})
+                      </h3>
+                      <p style={{ fontSize: 13.5, color: "var(--color-muted)", marginTop: 4 }}>
+                        Browse all past debates and community responses.
+                      </p>
+                    </div>
 
                     <div className="archived-debates-list">
                       {closedDebates.map((arch) => {
@@ -479,6 +484,18 @@ const Home = () => {
                               {arch.title}
                             </h4>
 
+                            <p
+                              className="arch-description"
+                              style={{
+                                margin: "10px 0 14px",
+                                color: "var(--color-muted)",
+                                lineHeight: 1.6,
+                                fontSize: "14px",
+                              }}
+                            >
+                              {arch.description}
+                            </p>
+
                             <div className="arch-counts-row">
                               <span className="stance-count-pill stance-count-pill--for">
                                 For: {arch.counts?.for || 0}
@@ -489,26 +506,25 @@ const Home = () => {
                               <span className="stance-count-pill stance-count-pill--neutral">
                                 Neutral: {arch.counts?.neutral || 0}
                               </span>
+                              <span className="stance-count-pill stance-count-pill--total">
+                                Total: {arch.counts?.total || 0}
+                              </span>
                             </div>
 
-                            {/* Expand/Collapse Button */}
+                            {/* Expand/Collapse Responses Button */}
                             <button
                               type="button"
                               className="btn-toggle-expand"
                               onClick={() => toggleExpand(archKey)}
                             >
                               {isExpanded
-                                ? "Hide Description & Responses ▲"
-                                : `View Description & Responses (${arch.responses?.length || 0}) ▼`}
+                                ? "Hide Responses ▲"
+                                : `View Community Responses (${arch.responses?.length || 0}) ▼`}
                             </button>
 
                             {/* Expanded Read-Only Content */}
                             {isExpanded && (
-                              <div className="archived-expanded-body">
-                                <p className="arch-description">
-                                  {arch.description}
-                                </p>
-
+                              <div className="archived-expanded-body" style={{ marginTop: 16 }}>
                                 <div className="arch-read-only-banner">
                                   <span>
                                     🔒 This debate is closed. Stance taking
